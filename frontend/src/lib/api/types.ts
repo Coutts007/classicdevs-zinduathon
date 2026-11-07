@@ -17,3 +17,6 @@ export type AnalysisListItem = S["AnalysisListItem"];
 export type Skill = S["Skill"];
 export type ClaimedSkill = S["ClaimedSkill"];
 export type Feedback = S["Feedback"];
+export type Notification = S["Notification"];
+export type PreferenceMatrix = S["PreferenceMatrix"];
+export type PreferenceChange = S["PreferenceChangeRequest"];

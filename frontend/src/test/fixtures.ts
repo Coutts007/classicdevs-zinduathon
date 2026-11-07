@@ -1,4 +1,4 @@
-import type { Me } from "@/lib/api/types";
+import type { Feedback, Me, Notification } from "@/lib/api/types";
 
 /** /me payloads shaped exactly like the generated schema type. */
 export function makeMe(overrides: Partial<Me> = {}): Me {
@@ -104,3 +104,33 @@ export function makeAnalysis(overrides: Partial<AnalysisDetail> = {}): AnalysisD
     ...overrides,
   };
 }
+
+export function makeFeedback(overrides: Partial<Feedback> = {}): Feedback {
+  return {
+    id: "fb1",
+    status: "shortlisted",
+    message: "Loved your shop-app tests. Can we talk on Thursday?",
+    company: "Savanna Tech",
+    recruiterName: "Wanjiru K.",
+    candidate: null,
+    jobPosting: null,
+    readAt: null,
+    createdAt: "2026-11-06T09:00:00Z",
+    ...overrides,
+  };
+}
+
+export function makeNotification(overrides: Partial<Notification> = {}): Notification {
+  return {
+    id: "n1",
+    kind: "recruiter_feedback",
+    title: "New feedback from Savanna Tech",
+    body: "You were shortlisted.",
+    linkPath: "/inbox",
+    readAt: null,
+    createdAt: "2026-11-06T09:00:00Z",
+    ...overrides,
+  };
+}
+
+export const page = <T>(results: T[]) => ({ count: results.length, next: null, previous: null, results });

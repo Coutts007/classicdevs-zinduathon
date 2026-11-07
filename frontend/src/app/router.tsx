@@ -85,6 +85,23 @@ const routes: RouteObject[] = [
         handle: { title: "History" },
         lazy: async () => ({ Component: (await import("@/features/seeker/HistoryPage")).HistoryPage }),
       },
+      {
+        path: "inbox",
+        handle: { title: "Inbox" },
+        lazy: async () => ({ Component: (await import("@/features/seeker/InboxPage")).InboxPage }),
+      },
+      {
+        path: "notifications",
+        handle: { title: "Notifications" },
+        lazy: async () => ({
+          Component: (await import("@/features/notifications/NotificationsPage")).NotificationsPage,
+        }),
+      },
+      {
+        path: "settings",
+        handle: { title: "Settings" },
+        lazy: async () => ({ Component: (await import("@/features/settings/SettingsPage")).SettingsPage }),
+      },
     ],
   },
   {
@@ -100,6 +117,18 @@ const routes: RouteObject[] = [
         index: true,
         lazy: async () => ({ Component: (await import("./pages/Placeholder")).AppPlaceholder }),
       },
+      {
+        path: "notifications",
+        handle: { title: "Notifications" },
+        lazy: async () => ({
+          Component: (await import("@/features/notifications/NotificationsPage")).NotificationsPage,
+        }),
+      },
+      {
+        path: "settings",
+        handle: { title: "Settings" },
+        lazy: async () => ({ Component: (await import("@/features/settings/SettingsPage")).SettingsPage }),
+      },
     ],
   },
   {
@@ -114,6 +143,13 @@ const routes: RouteObject[] = [
       {
         index: true,
         lazy: async () => ({ Component: (await import("./pages/Placeholder")).AppPlaceholder }),
+      },
+      {
+        path: "notifications",
+        handle: { title: "Notifications" },
+        lazy: async () => ({
+          Component: (await import("@/features/notifications/NotificationsPage")).NotificationsPage,
+        }),
       },
     ],
   },

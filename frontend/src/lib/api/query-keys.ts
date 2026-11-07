@@ -8,5 +8,8 @@ export const qk = {
   analysis: (id: string) => ["analyses", "detail", id] as const,
   claimedSkills: ["me", "claimed-skills"] as const,
   profileViews: ["me", "profile-views"] as const,
-  feedback: (page = 1, pageSize = 20) => ["feedback", page, pageSize] as const,
+  feedback: (page = 1, pageSize = 20, status = "") => ["feedback", page, pageSize, status] as const,
+  notifications: (unread: boolean, page = 1) => ["notifications", unread ? "unread" : "all", page] as const,
+  unreadCount: ["notifications", "unread-count"] as const,
+  preferences: ["me", "notification-preferences"] as const,
 };
