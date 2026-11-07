@@ -22,7 +22,7 @@ from apps.companies.models import ApprovalStatus, RecruiterProfile
 from apps.core import audit
 from apps.core.models import AuditLog
 from apps.core.pagination import StandardPagination
-from apps.core.schema import errors
+from apps.core.schema import errors, paginated
 from apps.notifications.models import Delivery, DeliveryStatus
 from apps.recruiting.models import Feedback, Moderation
 from apps.recruiting.services import feedback as feedback_service
@@ -112,7 +112,7 @@ class RecruiterQueueView(AdminView):
             OpenApiParameter("status", str, enum=ApprovalStatus.values),
             OpenApiParameter("page", int),
         ],
-        responses={200: RecruiterQueueSerializer(many=True), **ADMIN_ERRORS},
+        responses={200: paginated(RecruiterQueueSerializer), **ADMIN_ERRORS},
     )
     def get(self, request):
         queryset = RecruiterProfile.objects.select_related("user", "company").order_by("created_at")
@@ -158,6 +158,7 @@ class RecruiterReviewView(AdminView):
 class UserListView(AdminView):
     @extend_schema(
         tags=["Admin"],
+        operation_id="admin_users_list",
         summary="Users",
         parameters=[
             OpenApiParameter("search", str, description="Email, name or GitHub login"),
@@ -165,7 +166,7 @@ class UserListView(AdminView):
             OpenApiParameter("isActive", bool),
             OpenApiParameter("page", int),
         ],
-        responses={200: AdminUserSerializer(many=True), **ADMIN_ERRORS},
+        responses={200: paginated(AdminUserSerializer), **ADMIN_ERRORS},
     )
     def get(self, request):
         queryset = User.objects.select_related(
@@ -262,7 +263,7 @@ class DeliveryListView(AdminView):
             OpenApiParameter("provider", str, enum=["smtp", "thrivewave"]),
             OpenApiParameter("page", int),
         ],
-        responses={200: DeliverySerializer(many=True), **ADMIN_ERRORS},
+        responses={200: paginated(DeliverySerializer), **ADMIN_ERRORS},
     )
     def get(self, request):
         queryset = Delivery.objects.select_related("notification__user").order_by("-created_at")
@@ -318,7 +319,7 @@ class AuditLogView(AdminView):
             OpenApiParameter("until", str, description="ISO 8601"),
             OpenApiParameter("page", int),
         ],
-        responses={200: AuditLogSerializer(many=True), **ADMIN_ERRORS},
+        responses={200: paginated(AuditLogSerializer), **ADMIN_ERRORS},
     )
     def get(self, request):
         queryset = AuditLog.objects.select_related("actor").order_by("-created_at", "-id")
@@ -344,7 +345,7 @@ class HeldFeedbackView(AdminView):
     @extend_schema(
         tags=["Admin"],
         summary="Feedback held for review",
-        responses={200: HeldFeedbackSerializer(many=True), **ADMIN_ERRORS},
+        responses={200: paginated(HeldFeedbackSerializer), **ADMIN_ERRORS},
     )
     def get(self, request):
         queryset = Feedback.objects.filter(moderation=Moderation.HELD).select_related(
@@ -386,7 +387,7 @@ class SkillAdminListView(AdminView):
         tags=["Admin"],
         summary="Skill catalogue (admin)",
         parameters=[OpenApiParameter("page", int)],
-        responses={200: AdminSkillSerializer(many=True)},
+        responses={200: paginated(AdminSkillSerializer)},
     )
     def get(self, request):
         return self.paginate(
@@ -457,7 +458,7 @@ class DependencyMappingListView(AdminView):
         tags=["Admin"],
         summary="Dependency mappings",
         parameters=[OpenApiParameter("ecosystem", str), OpenApiParameter("page", int)],
-        responses={200: DependencyMappingSerializer(many=True)},
+        responses={200: paginated(DependencyMappingSerializer)},
     )
     def get(self, request):
         queryset = DependencyMapping.objects.select_related("skill").order_by(

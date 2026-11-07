@@ -2,7 +2,7 @@
 
 React + TypeScript single-page app for SkillProof, over the Django API in `../backend`.
 
-> Status: **Phases 1–2** (foundation; auth). See `docs/DESIGN.md` and `docs/DECISIONS.md`.
+> Status: **Phases 1–3** (foundation; auth; skill card and analysis). See `docs/DESIGN.md` and `docs/DECISIONS.md`.
 
 ## Quick start
 

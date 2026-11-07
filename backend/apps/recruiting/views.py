@@ -24,7 +24,7 @@ from apps.analysis.models import Analysis
 from apps.companies.models import Company
 from apps.core.exceptions import ApiError
 from apps.core.pagination import StandardPagination
-from apps.core.schema import errors
+from apps.core.schema import errors, paginated
 
 from .models import (
     Feedback,
@@ -112,6 +112,7 @@ class CandidateListView(APIView):
 
     @extend_schema(
         tags=["Candidates"],
+        operation_id="candidates_list",
         summary="Search candidates",
         description=(
             "Job seekers with a visible card and a completed analysis, by proven skill. Every "
@@ -130,7 +131,7 @@ class CandidateListView(APIView):
             OpenApiParameter("pageSize", int),
         ],
         responses={
-            200: CandidateSerializer(many=True),
+            200: paginated(CandidateSerializer),
             **errors((400, "validation_error")),
             **RECRUITER_ERRORS,
         },
@@ -277,7 +278,7 @@ class FeedbackListView(APIView):
         ),
         parameters=[OpenApiParameter("page", int), OpenApiParameter("pageSize", int)],
         responses={
-            200: FeedbackSerializer(many=True),
+            200: paginated(FeedbackSerializer),
             **errors((401, "not_authenticated"), (403, "permission_denied")),
         },
     )
@@ -383,6 +384,7 @@ class JobListCreateView(APIView):
 
     @extend_schema(
         tags=["Jobs"],
+        operation_id="jobs_list",
         summary="Job postings",
         description=(
             "Recruiters: their company's postings. Admins: all. Job seekers: open postings."
@@ -391,7 +393,7 @@ class JobListCreateView(APIView):
             OpenApiParameter("status", str, enum=JobStatus.values),
             OpenApiParameter("page", int),
         ],
-        responses={200: JobSerializer(many=True), **RECRUITER_ERRORS},
+        responses={200: paginated(JobSerializer), **RECRUITER_ERRORS},
     )
     def get(self, request):
         user = request.user
@@ -510,7 +512,7 @@ class JobMatchesView(APIView):
             OpenApiParameter("page", int),
             OpenApiParameter("pageSize", int),
         ],
-        responses={200: CandidateMatchSerializer(many=True), **errors((404, "not_found"))},
+        responses={200: paginated(CandidateMatchSerializer), **errors((404, "not_found"))},
     )
     def get(self, request, public_id):
         job = _job_or_404(request, public_id, edit=True)
@@ -582,7 +584,7 @@ class ShortlistListCreateView(APIView):
             OpenApiParameter("jobPostingId", str),
             OpenApiParameter("page", int),
         ],
-        responses={200: ShortlistSerializer(many=True), **RECRUITER_ERRORS},
+        responses={200: paginated(ShortlistSerializer), **RECRUITER_ERRORS},
     )
     def get(self, request):
         entries = ShortlistEntry.objects.filter(recruiter=request.user).select_related(
