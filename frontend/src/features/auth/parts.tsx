@@ -11,14 +11,23 @@ export function AuthCard({
   subtitle,
   children,
   footer,
+  wide = false,
 }: {
   title: string;
   subtitle?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
+  /** Breaks out of the 440px auth column (role choice cards). */
+  wide?: boolean;
 }) {
   return (
-    <GlassPanel glow scrim as="section" aria-labelledby="auth-title" className="p-7 sm:p-8">
+    <GlassPanel
+      glow
+      scrim
+      as="section"
+      aria-labelledby="auth-title"
+      className={wide ? "relative left-1/2 w-[min(92vw,640px)] -translate-x-1/2 p-7 sm:p-8" : "p-7 sm:p-8"}
+    >
       <h1 id="auth-title" className="text-2xl">
         {title}
       </h1>

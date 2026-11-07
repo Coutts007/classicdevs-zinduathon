@@ -4,6 +4,8 @@
  */
 import { test, type Page } from "@playwright/test";
 
+test.use({ reducedMotion: "no-preference" });
+
 const WIDTHS = [
   { name: "390", width: 390, height: 844 },
   { name: "1440", width: 1440, height: 900 },
@@ -24,8 +26,12 @@ const SHOTS: Shot[] = [
       await p.waitForTimeout(1500);
     },
   },
-  { name: "login-layout", path: "/login", ready: (p) => p.waitForTimeout(2500) },
-  { name: "app-shell", path: "/app", ready: (p) => p.waitForTimeout(800) },
+  { name: "login", path: "/login", ready: (p) => p.waitForTimeout(2500) },
+  { name: "register-role", path: "/register", ready: (p) => p.waitForTimeout(2500) },
+  { name: "register-job-seeker", path: "/register?role=job_seeker", ready: (p) => p.waitForTimeout(2500) },
+  { name: "register-recruiter", path: "/register?role=recruiter", ready: (p) => p.waitForTimeout(2500) },
+  { name: "forgot-password", path: "/forgot-password", ready: (p) => p.waitForTimeout(2000) },
+  { name: "terms", path: "/terms", ready: (p) => p.waitForTimeout(800) },
   { name: "not-found", path: "/this-does-not-exist", ready: (p) => p.waitForTimeout(800) },
 ];
 

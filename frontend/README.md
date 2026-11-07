@@ -2,7 +2,7 @@
 
 React + TypeScript single-page app for SkillProof, over the Django API in `../backend`.
 
-> Status: **Phase 1 (foundation)**. See `docs/DESIGN.md` and `docs/DECISIONS.md`.
+> Status: **Phases 1–2** (foundation; auth). See `docs/DESIGN.md` and `docs/DECISIONS.md`.
 
 ## Quick start
 
@@ -35,3 +35,9 @@ Everything in Docker, from the repository root: `docker compose up` (frontend on
 
 Regenerate design assets: `python3 scripts/make-land-mask.py` (land mask from Natural Earth),
 `node scripts/capture-static-planet.mjs && python3 scripts/to-webp.py` (static planet, dev server running).
+
+## End-to-end tests
+
+Start the backend with demo data (`make services && make migrate && python manage.py seed_demo`
+in `backend/`, then `make run`) and the frontend (`npm run dev`), then `npm run e2e`. Demo
+accounts use the password `SkillProof-demo-2026` (override with `DEMO_PASSWORD`).

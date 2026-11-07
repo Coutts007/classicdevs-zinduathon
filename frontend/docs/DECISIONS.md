@@ -38,3 +38,26 @@ over the rim use `GlassPanel scrim` (84% dark), tested in `src/lib/contrast.test
 - Backend tests read the developer's `backend/.env` for `FRONTEND_URL`/`CORS_ALLOWED_ORIGINS`;
   the test settings now pin them.
 - Backend defaults now allow the Vite origin `http://localhost:5173`.
+
+## F-008 Guards are components, not route loaders (Phase 2)
+
+Auth state lives in React context (`AuthProvider`), which loaders can't read. `RequireAuth`
+(roles, recruiter approval) and `GuestOnly` wrap routes instead; while the session is being
+restored (refresh → `/me`) they render a splash, so protected screens never flash.
+
+## F-009 Company is a text field at registration (Phase 2)
+
+The guidelines ask for a company combobox (existing or new), but the API has no public list of
+companies. The backend reuses an existing company case-insensitively, so free text gives the same
+result. **Missing endpoint** if a picker is wanted: `GET /companies?search=`.
+
+## F-010 E2E runs with reduced motion (Phase 2)
+
+Headless Chromium renders WebGL in software; the 3D planet starved the page and made form submits
+time out. Functional e2e tests use `reducedMotion: "reduce"` (static planet, which also exercises
+that path); `screenshots.spec.ts` opts back into motion to capture the real scene.
+
+## F-011 Sign out leaves the protected area first (Phase 2)
+
+Clearing the session inside `/app` made the guard redirect to `/login?next=/app` before the
+"go home" navigation ran. The menu navigates to `/` first, then signs out.
