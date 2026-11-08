@@ -64,6 +64,22 @@ describe("api client middleware", () => {
     expect(meCalls).toBe(2);
   });
 
+  it("keeps the session when the refresh is only rate-limited", async () => {
+    tokens.set({ access: "OLD", refresh: "R1" });
+    const ended = vi.fn();
+    const off = sessionEvents.onEnded(ended);
+    server.use(
+      http.get(`${API}/me`, expired),
+      http.post(`${API}/auth/token/refresh`, () =>
+        HttpResponse.json({ code: "rate_limited" }, { status: 429, headers: { "Retry-After": "3" } }),
+      ),
+    );
+    await expect(unwrap(api.GET("/api/v1/me"))).rejects.toMatchObject({ status: 401 });
+    expect(ended).not.toHaveBeenCalled();
+    expect(tokens.refresh()).toBe("R1");
+    off();
+  });
+
   it("ends the session when the refresh fails", async () => {
     tokens.set({ access: "OLD", refresh: "R1" });
     const ended = vi.fn();

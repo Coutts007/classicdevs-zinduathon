@@ -12,4 +12,11 @@ export const qk = {
   notifications: (unread: boolean, page = 1) => ["notifications", unread ? "unread" : "all", page] as const,
   unreadCount: ["notifications", "unread-count"] as const,
   preferences: ["me", "notification-preferences"] as const,
+  candidates: (params: Record<string, unknown>) => ["candidates", "list", params] as const,
+  candidate: (login: string) => ["candidates", "detail", login.toLowerCase()] as const,
+  jobs: (status = "", page = 1) => ["jobs", "list", status, page] as const,
+  job: (id: string) => ["jobs", "detail", id] as const,
+  matches: (id: string, page = 1, minMatch = 0) => ["jobs", "matches", id, page, minMatch] as const,
+  matchMe: (id: string) => ["jobs", "match-me", id] as const,
+  shortlists: (jobId = "") => ["shortlists", jobId] as const,
 };

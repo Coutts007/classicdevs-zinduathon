@@ -1,4 +1,4 @@
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import { GlassPanel } from "@/components/glass/Glass";
 import { Button } from "@/components/ui/Button";
@@ -6,12 +6,15 @@ import { Pagination } from "@/components/ui/Pagination";
 import { Segmented } from "@/components/ui/Segmented";
 import { EmptyState, ErrorState, SkeletonBlock } from "@/components/ui/States";
 import { userMessage } from "@/lib/api/errors";
+import { useAuth } from "@/lib/auth/auth-context";
+import { resolveLink } from "@/lib/auth/redirects";
 import { ago } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 import { useMarkAllRead, useMarkRead, useNotifications } from "./api";
 
 export function NotificationsPage() {
+  const { user } = useAuth();
   const [params, setParams] = useSearchParams();
   const unreadOnly = params.get("unread") === "true";
   const page = Number(params.get("page") ?? 1);
@@ -58,7 +61,17 @@ export function NotificationsPage() {
                 />
                 <div className="min-w-0 flex-1">
                   <p className="font-medium">
-                    {n.title}
+                    {n.linkPath && user ? (
+                      <Link
+                        to={resolveLink(n.linkPath, user)}
+                        onClick={() => !n.readAt && markRead.mutate(n.id)}
+                        className="hover:text-flare-hot hover:underline"
+                      >
+                        {n.title}
+                      </Link>
+                    ) : (
+                      n.title
+                    )}
                     {!n.readAt && <span className="sr-only"> (unread)</span>}
                   </p>
                   {n.body && <p className="text-sm text-mist">{n.body}</p>}

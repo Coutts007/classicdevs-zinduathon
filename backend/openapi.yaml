@@ -2075,6 +2075,18 @@ paths:
                     message: …
                   summary: token_invalid
           description: 'Not signed in or token invalid: `token_invalid`'
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                RateLimited:
+                  value:
+                    code: rate_limited
+                    message: …
+                  summary: rate_limited
+          description: 'Too many requests: `rate_limited`'
   /api/v1/candidates:
     get:
       operationId: candidates_list
@@ -4082,6 +4094,16 @@ components:
       - openToWork
       - signalScore
       - topSkills
+    CandidateRef:
+      type: object
+      properties:
+        githubLogin:
+          type: string
+        name:
+          type: string
+      required:
+      - githubLogin
+      - name
     Card:
       type: object
       properties:
@@ -4525,10 +4547,9 @@ components:
           type: string
           readOnly: true
         candidate:
-          type: object
-          additionalProperties: {}
+          allOf:
+          - $ref: '#/components/schemas/CandidateRef'
           nullable: true
-          description: 'Only for the sender''s view: who the feedback was about.'
           readOnly: true
         jobPosting:
           allOf:
@@ -4751,8 +4772,7 @@ components:
         requiredSkills:
           type: array
           items:
-            type: object
-            additionalProperties: {}
+            $ref: '#/components/schemas/RequiredSkill'
           readOnly: true
         createdAt:
           type: string
@@ -5740,6 +5760,23 @@ components:
         * `onsite` - On-site
         * `hybrid` - Hybrid
         * `remote` - Remote
+    RequiredSkill:
+      type: object
+      properties:
+        skill:
+          type: string
+          description: Name, slug or alias
+        minimumLabel:
+          allOf:
+          - $ref: '#/components/schemas/MinimumLabelEnum'
+          default: moderate
+        weight:
+          type: integer
+          maximum: 3
+          minimum: 1
+          default: 1
+      required:
+      - skill
     RequiredSkillRequest:
       type: object
       properties:
@@ -5783,8 +5820,8 @@ components:
           format: uuid
           readOnly: true
         candidate:
-          type: object
-          additionalProperties: {}
+          allOf:
+          - $ref: '#/components/schemas/ShortlistCandidate'
           readOnly: true
         jobPosting:
           allOf:
@@ -5810,6 +5847,19 @@ components:
       - id
       - jobPosting
       - updatedAt
+    ShortlistCandidate:
+      type: object
+      properties:
+        githubLogin:
+          type: string
+        name:
+          type: string
+        headline:
+          type: string
+      required:
+      - githubLogin
+      - headline
+      - name
     ShortlistCreateRequest:
       type: object
       properties:

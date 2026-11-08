@@ -93,3 +93,16 @@ def test_expired_or_tampered_access_token_gets_token_invalid(api_client, job_see
     assert response.status_code == 401
     assert response.json()["code"] == "token_invalid"
     assert response["WWW-Authenticate"].startswith("Bearer")
+
+
+def test_refresh_has_its_own_budget_not_the_anon_one(api_client, job_seeker, monkeypatch):
+    """Page loads refresh without a user; sharing the 60/hour anon budget signed people out."""
+    from rest_framework.throttling import SimpleRateThrottle
+
+    rates = {**SimpleRateThrottle.THROTTLE_RATES, "anon": "2/hour", "token_refresh": "100/hour"}
+    monkeypatch.setattr(SimpleRateThrottle, "THROTTLE_RATES", rates)
+    refresh = issue_tokens(job_seeker)["refresh"]
+    for _ in range(5):
+        response = api_client.post(REFRESH, {"refresh": refresh})
+        assert response.status_code == 200
+        refresh = response.json()["refresh"]

@@ -115,3 +115,29 @@ def test_path_parameters_match_their_url_templates(client):
             assert params == names, (path, params, names)
             checked += bool(names)
     assert checked > 10
+
+
+def test_schema_types_nested_recruiting_objects(client):
+    """Method fields are typed, so the frontend gets real types instead of `{[key]: unknown}`."""
+    schemas = client.get("/api/v1/schema/", HTTP_ACCEPT="application/vnd.oai.openapi+json").json()[
+        "components"
+    ]["schemas"]
+    candidate = schemas["Shortlist"]["properties"]["candidate"]
+    assert candidate["allOf"][0]["$ref"].endswith("/ShortlistCandidate") or candidate.get(
+        "$ref", ""
+    ).endswith("/ShortlistCandidate")
+    assert set(schemas["ShortlistCandidate"]["properties"]) == {"githubLogin", "name", "headline"}
+    assert set(schemas["CandidateRef"]["properties"]) == {"githubLogin", "name"}
+    required = schemas["Job"]["properties"]["requiredSkills"]
+    assert required["items"]["$ref"].endswith("/RequiredSkill")
+    assert set(schemas["RequiredSkill"]["properties"]) == {"skill", "minimumLabel", "weight"}
+
+
+def test_throttle_scale_multiplies_every_rate(monkeypatch):
+    from config.settings import base
+
+    monkeypatch.setattr(base, "THROTTLE_SCALE", 50)
+    assert base._scaled({"login": "5/minute", "anon": "60/hour"}) == {
+        "login": "250/minute",
+        "anon": "3000/hour",
+    }

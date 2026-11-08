@@ -2,6 +2,8 @@ import * as Popover from "@radix-ui/react-popover";
 import { Bell, CheckCheck } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
+import { useAuth } from "@/lib/auth/auth-context";
+import { resolveLink } from "@/lib/auth/redirects";
 import { ago } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -9,6 +11,7 @@ import { useMarkAllRead, useMarkRead, useUnreadNotifications } from "./api";
 
 /** Bell with unread count (polled every 60 s) and a popover of the latest unread items. */
 export function NotificationBell({ allPath }: { allPath: string }) {
+  const { user } = useAuth();
   const unread = useUnreadNotifications();
   const markRead = useMarkRead();
   const markAll = useMarkAllRead();
@@ -53,10 +56,7 @@ export function NotificationBell({ allPath }: { allPath: string }) {
                     type="button"
                     onClick={() => {
                       markRead.mutate(n.id);
-                      if (n.linkPath)
-                        navigate(
-                          n.linkPath === "/inbox" ? allPath.replace(/notifications$/, "inbox") : n.linkPath,
-                        );
+                      if (n.linkPath && user) navigate(resolveLink(n.linkPath, user));
                     }}
                     className={cn("w-full rounded-xl px-3 py-2.5 text-left hover:bg-white/[0.06]")}
                   >
