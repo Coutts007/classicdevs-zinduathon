@@ -1,5 +1,11 @@
 import { Bell, Briefcase, FileBarChart2, Inbox, LayoutDashboard, Settings, Sparkles } from "lucide-react";
-import { NavLink, Outlet } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, Outlet, useLocation, useMatches, useNavigate } from "react-router-dom";
+
+import { PhoneVerifyDialog } from "@/features/auth/PhoneVerifyDialog";
+
+import { EmailBanner } from "./EmailBanner";
+import { UserMenu } from "./UserMenu";
 
 import { Wordmark } from "@/components/brand/Logo";
 import { SpaceBackdrop } from "@/components/space/SpaceBackdrop";
@@ -26,6 +32,24 @@ const NAV: Record<Role, { to: string; label: string; icon: typeof LayoutDashboar
  */
 export function AppShell({ area }: { area: Role }) {
   const items = NAV[area];
+  const location = useLocation();
+  const navigate = useNavigate();
+  // Route metadata: { handle: { title } } names the page in the top bar and <title>.
+  const matches = useMatches() as { handle?: { title?: string } }[];
+  const title = [...matches].reverse().find((m) => m.handle?.title)?.handle?.title ?? "Dashboard";
+  const [phoneOpen, setPhoneOpen] = useState(false);
+  useEffect(() => {
+    document.title = `${title} · SkillProof`;
+  }, [title]);
+  useEffect(() => {
+    // After registering with SMS feedback, verify the phone straight away.
+    if ((location.state as { verifyPhone?: boolean } | null)?.verifyPhone) {
+      setPhoneOpen(true);
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location, navigate]);
+  const settingsPath =
+    area === "job_seeker" ? "/app/settings" : area === "recruiter" ? "/recruiter/settings" : "/admin";
   return (
     <div className="relative min-h-screen">
       <SpaceBackdrop />
@@ -55,15 +79,19 @@ export function AppShell({ area }: { area: Role }) {
       </aside>
       <div className="lg:pl-[17rem]">
         <header className="glass-panel sticky top-4 z-30 mx-4 mt-4 flex h-14 items-center justify-between rounded-glass px-5">
-          <h1 className="text-base font-semibold">Dashboard</h1>
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="grid h-9 w-9 place-items-center rounded-full text-mist hover:bg-white/10 hover:text-ink"
-          >
-            <Bell className="h-4 w-4" />
-          </button>
+          <h1 className="text-base font-semibold">{title}</h1>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label="Notifications"
+              className="grid h-9 w-9 place-items-center rounded-full text-mist hover:bg-white/10 hover:text-ink"
+            >
+              <Bell className="h-4 w-4" />
+            </button>
+            <UserMenu settingsPath={settingsPath} />
+          </div>
         </header>
+        <EmailBanner />
         <main id="main" className="p-4 pb-24 lg:pb-8">
           <Outlet />
         </main>
@@ -89,6 +117,7 @@ export function AppShell({ area }: { area: Role }) {
           </NavLink>
         ))}
       </nav>
+      <PhoneVerifyDialog open={phoneOpen} onOpenChange={setPhoneOpen} />
     </div>
   );
 }

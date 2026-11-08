@@ -73,7 +73,7 @@ function RoleStep({ onPick }: { onPick: (role: RoleChoice) => void }) {
     <div className="grid gap-4 sm:grid-cols-2">
       {choices.map(({ role, icon: Icon, title, body }) => (
         <button key={role} type="button" onClick={() => onPick(role)} className="group text-left">
-          <GlassCard className="h-full p-5 transition group-hover:border-flare/50 group-hover:bg-white/[0.06] group-focus-visible:border-flare">
+          <GlassCard className="h-full p-6 sm:min-h-[200px] transition group-hover:border-flare/50 group-hover:bg-white/[0.06] group-focus-visible:border-flare">
             <span className="grid h-10 w-10 place-items-center rounded-xl bg-flare/15 text-flare-hot">
               <Icon aria-hidden className="h-5 w-5" />
             </span>
@@ -95,6 +95,7 @@ export function RegisterPage() {
   if (!role) {
     return (
       <AuthCard
+        wide
         title="Create your account"
         subtitle="Who are you here as?"
         footer={
@@ -141,37 +142,45 @@ function RegisterForm({ role, onChangeRole }: { role: RoleChoice; onChangeRole: 
   const password = watch("password");
   const recruiter = role === "recruiter";
 
-  const onSubmit = handleSubmit(async (values) => {
-    setError(null);
-    try {
-      const result = await unwrap(
-        api.POST("/api/v1/auth/register", {
-          body: {
-            role: values.role,
-            fullName: values.fullName,
-            email: values.email,
-            password: values.password,
-            phone: values.phone ? toE164(values.phone) : null,
-            ...(recruiter ? { companyName: values.companyName, jobTitle: values.jobTitle } : {}),
-            consents: values.consents,
-          },
-        }),
-      );
-      signIn(result);
-      // Job seekers who chose SMS verify their phone right away (the dashboard opens the dialog).
-      navigate(homeFor(result.user), {
-        replace: true,
-        state: { verifyPhone: values.consents.smsFeedback && !recruiter },
-      });
-    } catch (e) {
-      if (e instanceof ApiError && e.fields) {
-        Object.entries(e.fields).forEach(([field, messages]) =>
-          setFieldError(field as Path<RegisterValues>, { message: messages.join(" ") }),
+  const onSubmit = handleSubmit(
+    async (values) => {
+      setError(null);
+      try {
+        const result = await unwrap(
+          api.POST("/api/v1/auth/register", {
+            body: {
+              role: values.role,
+              fullName: values.fullName,
+              email: values.email,
+              password: values.password,
+              phone: values.phone ? toE164(values.phone) : null,
+              ...(recruiter ? { companyName: values.companyName, jobTitle: values.jobTitle } : {}),
+              consents: values.consents,
+            },
+          }),
         );
-        setError("Check the highlighted fields.");
-      } else setError(userMessage(e));
-    }
-  });
+        signIn(result);
+        // Job seekers who chose SMS verify their phone right away (the dashboard opens the dialog).
+        navigate(homeFor(result.user), {
+          replace: true,
+          state: { verifyPhone: values.consents.smsFeedback && !recruiter },
+        });
+      } catch (e) {
+        if (e instanceof ApiError && e.fields) {
+          Object.entries(e.fields).forEach(([field, messages]) =>
+            setFieldError(field as Path<RegisterValues>, { message: messages.join(" ") }),
+          );
+          setError("Check the highlighted fields.");
+        } else setError(userMessage(e));
+      }
+    },
+    // Client-side problems: say so at the top too (some fields may be scrolled out of view).
+    (invalid) => {
+      const names = Object.keys(invalid).filter((k) => k !== "consents");
+      if (invalid.consents) names.push("consents");
+      setError(`Check the highlighted fields${names.length ? ` (${names.join(", ")})` : ""}.`);
+    },
+  );
 
   const err = formState.errors;
   return (

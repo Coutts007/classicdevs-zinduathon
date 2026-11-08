@@ -8,3 +8,11 @@ afterEach(() => {
   window.localStorage.clear();
 });
 afterAll(() => server.close());
+
+// jsdom lacks ResizeObserver (Radix primitives measure themselves with it).
+class ResizeObserverStub {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+globalThis.ResizeObserver ??= ResizeObserverStub as unknown as typeof ResizeObserver;
