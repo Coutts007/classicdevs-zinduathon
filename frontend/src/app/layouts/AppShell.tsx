@@ -1,4 +1,13 @@
-import { Bell, Briefcase, FileBarChart2, Inbox, LayoutDashboard, Settings, Sparkles } from "lucide-react";
+import {
+  Bell,
+  Briefcase,
+  FileBarChart2,
+  Inbox,
+  LayoutDashboard,
+  LineChart,
+  Settings,
+  Sparkles,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useMatches, useNavigate } from "react-router-dom";
 
@@ -18,6 +27,7 @@ const NAV: Record<Role, { to: string; label: string; icon: typeof LayoutDashboar
     { to: "/app", label: "Dashboard", icon: LayoutDashboard },
     { to: "/app/analyse", label: "Analyse", icon: Sparkles },
     { to: "/app/card", label: "My card", icon: FileBarChart2 },
+    { to: "/app/history", label: "History", icon: LineChart },
     { to: "/app/inbox", label: "Inbox", icon: Inbox },
     { to: "/app/jobs", label: "Jobs", icon: Briefcase },
     { to: "/app/settings", label: "Settings", icon: Settings },

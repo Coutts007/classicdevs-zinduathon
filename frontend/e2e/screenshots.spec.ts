@@ -48,3 +48,50 @@ for (const size of WIDTHS) {
     });
   }
 }
+
+/** Signed-in screens: one sign-in per width, then each route. */
+const AUTHED: { name: string; path: string; account: string; ready?: (page: Page) => Promise<void> }[] = [
+  {
+    name: "public-card",
+    path: "/u/amina-demo",
+    account: "",
+    ready: (p) => p.getByRole("heading", { name: "Proven skills" }).waitFor({ timeout: 30_000 }),
+  },
+  {
+    name: "app-dashboard",
+    path: "/app",
+    account: "amina@jobseeker.demo",
+    ready: (p) => p.getByText("Top skills").waitFor(),
+  },
+  {
+    name: "app-card",
+    path: "/app/card",
+    account: "amina@jobseeker.demo",
+    ready: (p) => p.getByRole("heading", { name: "Proven skills" }).waitFor({ timeout: 30_000 }),
+  },
+  {
+    name: "app-history",
+    path: "/app/history",
+    account: "amina@jobseeker.demo",
+    ready: (p) => p.getByText("Signal Score over time").waitFor(),
+  },
+];
+
+for (const size of WIDTHS) {
+  for (const shot of AUTHED) {
+    test(`${shot.name} @ ${size.name}`, async ({ page }) => {
+      await page.setViewportSize({ width: size.width, height: size.height });
+      if (shot.account) {
+        await page.goto("/login");
+        await page.getByLabel("Email").fill(shot.account);
+        await page.getByLabel("Password").fill(process.env.DEMO_PASSWORD ?? "SkillProof-demo-2026");
+        await page.getByRole("button", { name: "Sign in" }).click();
+        await page.waitForURL(/\/app$/);
+      }
+      await page.goto(shot.path);
+      await shot.ready?.(page);
+      await page.waitForTimeout(1500); // dial and panel animations settle
+      await page.screenshot({ path: `e2e/__screenshots__/${shot.name}-${size.name}.png`, fullPage: true });
+    });
+  }
+}

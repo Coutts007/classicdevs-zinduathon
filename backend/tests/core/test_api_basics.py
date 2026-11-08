@@ -76,3 +76,42 @@ class TestPagination:
         data = paginator.get_paginated_response(page).data
         assert list(data) == ["count", "next", "previous", "results"]
         assert data["results"][0] == 20
+
+
+def test_paginated_endpoints_are_documented_as_pages(client):
+    """Regression: hand-paginated views once documented their 200 as a bare array, so generated
+    TypeScript clients expected an array where the API returns {count, next, previous, results}."""
+    schema = client.get("/api/v1/schema/", HTTP_ACCEPT="application/vnd.oai.openapi+json").json()
+    for path in [
+        "/api/v1/analyses",
+        "/api/v1/candidates",
+        "/api/v1/feedback",
+        "/api/v1/jobs",
+        "/api/v1/shortlists",
+        "/api/v1/admin/users",
+    ]:
+        content = schema["paths"][path]["get"]["responses"]["200"]["content"]["application/json"][
+            "schema"
+        ]
+        ref = content["$ref"].rsplit("/", 1)[-1]
+        assert set(schema["components"]["schemas"][ref]["properties"]) == {
+            "count",
+            "next",
+            "previous",
+            "results",
+        }, path
+
+
+def test_path_parameters_match_their_url_templates(client):
+    """Regression: camelizing renamed path params (publicId) while paths kept {public_id}."""
+    import re
+
+    schema = client.get("/api/v1/schema/", HTTP_ACCEPT="application/vnd.oai.openapi+json").json()
+    checked = 0
+    for path, item in schema["paths"].items():
+        names = set(re.findall(r"{([^}]+)}", path))
+        for operation in item.values():
+            params = {p["name"] for p in operation.get("parameters", []) if p.get("in") == "path"}
+            assert params == names, (path, params, names)
+            checked += bool(names)
+    assert checked > 10

@@ -21,6 +21,10 @@ const routes: RouteObject[] = [
         lazy: async () => ({ Component: (await import("@/features/landing/LandingPage")).LandingPage }),
       },
       {
+        path: "u/:login",
+        lazy: async () => ({ Component: (await import("@/features/card/PublicCardPage")).PublicCardPage }),
+      },
+      {
         path: "terms",
         lazy: async () => ({ Component: (await import("@/features/legal/LegalPages")).TermsPage }),
       },
@@ -63,7 +67,23 @@ const routes: RouteObject[] = [
     children: [
       {
         index: true,
-        lazy: async () => ({ Component: (await import("./pages/Placeholder")).AppPlaceholder }),
+        handle: { title: "Dashboard" },
+        lazy: async () => ({ Component: (await import("@/features/seeker/DashboardPage")).DashboardPage }),
+      },
+      {
+        path: "analyse",
+        handle: { title: "Analyse" },
+        lazy: async () => ({ Component: (await import("@/features/analysis/AnalysePage")).AnalysePage }),
+      },
+      {
+        path: "card",
+        handle: { title: "My card" },
+        lazy: async () => ({ Component: (await import("@/features/seeker/MyCardPage")).MyCardPage }),
+      },
+      {
+        path: "history",
+        handle: { title: "History" },
+        lazy: async () => ({ Component: (await import("@/features/seeker/HistoryPage")).HistoryPage }),
       },
     ],
   },

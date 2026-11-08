@@ -35,3 +35,47 @@ def errors(*pairs: tuple[int, str]) -> dict[int, OpenApiResponse]:
         )
         for status_code, codes in by_status.items()
     }
+
+
+_PAGINATED: dict[type, type] = {}
+
+
+def paginated(serializer_class: type) -> type:
+    """Schema for a page of results ({count, next, previous, results}), as StandardPagination
+    returns it. Views that paginate by hand (APIView) must document their 200 with this, or
+    generated clients would expect a bare array."""
+    from rest_framework import serializers
+
+    if serializer_class not in _PAGINATED:
+        base = serializer_class.__name__.removesuffix("Serializer")
+        _PAGINATED[serializer_class] = type(
+            f"Paginated{base}ListSerializer",
+            (serializers.Serializer,),
+            {
+                "count": serializers.IntegerField(),
+                "next": serializers.URLField(allow_null=True),
+                "previous": serializers.URLField(allow_null=True),
+                "results": serializer_class(many=True),
+            },
+        )
+    return _PAGINATED[serializer_class]
+
+
+def restore_path_param_names(result, generator, request, public):
+    """Post-processing hook (runs after camelize): the camelize hook renames path parameters
+    (`public_id` → `publicId`) but not the `{public_id}` placeholders in the paths, which makes the
+    spec invalid and breaks generated clients. Path parameters keep the template's names."""
+    import re
+
+    for path, item in result.get("paths", {}).items():
+        names = re.findall(r"{([^}]+)}", path)
+        lookup = {n.replace("_", "").lower(): n for n in names}
+        for operation in item.values():
+            if not isinstance(operation, dict):
+                continue
+            for param in operation.get("parameters", []):
+                if param.get("in") == "path":
+                    param["name"] = lookup.get(
+                        param["name"].replace("_", "").lower(), param["name"]
+                    )
+    return result

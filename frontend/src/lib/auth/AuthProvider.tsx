@@ -26,6 +26,7 @@ export function AuthProvider({
     tokens.refresh() ? "loading" : "signed-out",
   );
   const [user, setUser] = useState<Me | null>(null);
+  const [exitTo, setExitTo] = useState<string | null>(null);
 
   const loadMe = useCallback(async () => {
     const me = await unwrap(api.GET("/api/v1/me"));
@@ -75,6 +76,7 @@ export function AuthProvider({
   const signIn = useCallback<AuthState["signIn"]>(
     ({ access, refresh, user: me }) => {
       tokens.set({ access, refresh });
+      setExitTo(null);
       queryClient.setQueryData(qk.me, me);
       setUser(me);
       setStatus("signed-in");
@@ -82,14 +84,18 @@ export function AuthProvider({
     [queryClient],
   );
 
-  const signOut = useCallback(async () => {
-    const refresh = tokens.refresh();
-    if (refresh) await api.POST("/api/v1/auth/logout", { body: { refresh } }).catch(() => undefined);
-    tokens.clear();
-    queryClient.clear();
-    setUser(null);
-    setStatus("signed-out");
-  }, [queryClient]);
+  const signOut = useCallback(
+    async (to = "/") => {
+      setExitTo(to);
+      const refresh = tokens.refresh();
+      if (refresh) await api.POST("/api/v1/auth/logout", { body: { refresh } }).catch(() => undefined);
+      tokens.clear();
+      queryClient.clear();
+      setUser(null);
+      setStatus("signed-out");
+    },
+    [queryClient],
+  );
 
   const refreshMe = useCallback(async () => {
     try {
@@ -100,8 +106,8 @@ export function AuthProvider({
   }, [loadMe]);
 
   const value = useMemo<AuthState>(
-    () => ({ status, user, signIn, signOut, refreshMe }),
-    [status, user, signIn, signOut, refreshMe],
+    () => ({ status, user, signIn, signOut, refreshMe, exitTo }),
+    [status, user, signIn, signOut, refreshMe, exitTo],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

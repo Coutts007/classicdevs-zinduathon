@@ -7,7 +7,10 @@ export type AuthState = {
   user: Me | null;
   /** Store tokens from register/login/GitHub and cache the user. */
   signIn: (response: Pick<AuthResponse, "access" | "refresh" | "user">) => void;
-  signOut: () => Promise<void>;
+  /** Sign out; protected routes then send the user to `exitTo` (default "/") instead of /login. */
+  signOut: (exitTo?: string) => Promise<void>;
+  /** Set after a deliberate sign-out, so guards don't treat it as an expired session. */
+  exitTo?: string | null;
   /** Re-read /me (after verifying email or phone, profile edits…). */
   refreshMe: () => Promise<Me | null>;
 };

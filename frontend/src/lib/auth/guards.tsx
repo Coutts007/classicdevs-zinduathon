@@ -20,9 +20,10 @@ export function RequireAuth({
   allowUnapproved?: boolean;
   children?: ReactNode;
 }) {
-  const { status, user } = useAuth();
+  const { status, user, exitTo } = useAuth();
   const location = useLocation();
   if (status === "loading") return <Splash />;
+  if ((status === "signed-out" || !user) && exitTo) return <Navigate to={exitTo} replace />;
   if (status === "signed-out" || !user) {
     const next = encodeURIComponent(location.pathname + location.search);
     return <Navigate to={`/login?next=${next}`} replace />;

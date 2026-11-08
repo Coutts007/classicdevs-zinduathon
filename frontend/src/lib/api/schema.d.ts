@@ -12,7 +12,7 @@ export interface paths {
             cookie?: never;
         };
         /** Audit log */
-        get: operations["admin_audit_log_list"];
+        get: operations["admin_audit_log_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -29,7 +29,7 @@ export interface paths {
             cookie?: never;
         };
         /** Dependency mappings */
-        get: operations["admin_dependency_mappings_list"];
+        get: operations["admin_dependency_mappings_retrieve"];
         put?: never;
         /**
          * Map a package to a skill
@@ -101,7 +101,7 @@ export interface paths {
             cookie?: never;
         };
         /** Feedback held for review */
-        get: operations["admin_feedback_held_list"];
+        get: operations["admin_feedback_held_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -118,7 +118,7 @@ export interface paths {
             cookie?: never;
         };
         /** Notification deliveries */
-        get: operations["admin_notification_deliveries_list"];
+        get: operations["admin_notification_deliveries_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -155,7 +155,7 @@ export interface paths {
             cookie?: never;
         };
         /** Recruiter approval queue */
-        get: operations["admin_recruiters_list"];
+        get: operations["admin_recruiters_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -212,7 +212,7 @@ export interface paths {
             cookie?: never;
         };
         /** Skill catalogue (admin) */
-        get: operations["admin_skills_list"];
+        get: operations["admin_skills_retrieve"];
         put?: never;
         /**
          * Add a skill
@@ -712,7 +712,7 @@ export interface paths {
          * My feedback
          * @description Job seekers: feedback received (held or rejected messages are never shown). Recruiters: feedback sent.
          */
-        get: operations["feedback_list"];
+        get: operations["feedback_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -832,7 +832,7 @@ export interface paths {
          * Ranked candidates for a job
          * @description Visible candidates ranked by match score (brief 8.7), then Signal Score. Owner recruiter or admin.
          */
-        get: operations["jobs_matches_list"];
+        get: operations["jobs_matches_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1010,7 +1010,7 @@ export interface paths {
             cookie?: never;
         };
         /** My shortlist */
-        get: operations["shortlists_list"];
+        get: operations["shortlists_retrieve"];
         put?: never;
         /** Shortlist a candidate */
         post: operations["shortlists_create"];
@@ -1656,6 +1656,94 @@ export interface components {
          * @enum {string}
          */
         NotificationKindEnum: "analysis_completed" | "analysis_failed" | "recruiter_feedback" | "recruiter_approved" | "recruiter_rejected" | "shortlisted" | "profile_viewed_digest";
+        PaginatedAdminSkillList: {
+            count: number;
+            /** Format: uri */
+            next: string | null;
+            /** Format: uri */
+            previous: string | null;
+            results: components["schemas"]["AdminSkill"][];
+        };
+        PaginatedAdminUserList: {
+            count: number;
+            /** Format: uri */
+            next: string | null;
+            /** Format: uri */
+            previous: string | null;
+            results: components["schemas"]["AdminUser"][];
+        };
+        PaginatedAnalysisListItemList: {
+            count: number;
+            /** Format: uri */
+            next: string | null;
+            /** Format: uri */
+            previous: string | null;
+            results: components["schemas"]["AnalysisListItem"][];
+        };
+        PaginatedAuditLogList: {
+            count: number;
+            /** Format: uri */
+            next: string | null;
+            /** Format: uri */
+            previous: string | null;
+            results: components["schemas"]["AuditLog"][];
+        };
+        PaginatedCandidateList: {
+            count: number;
+            /** Format: uri */
+            next: string | null;
+            /** Format: uri */
+            previous: string | null;
+            results: components["schemas"]["Candidate"][];
+        };
+        PaginatedCandidateMatchList: {
+            count: number;
+            /** Format: uri */
+            next: string | null;
+            /** Format: uri */
+            previous: string | null;
+            results: components["schemas"]["CandidateMatch"][];
+        };
+        PaginatedDeliveryList: {
+            count: number;
+            /** Format: uri */
+            next: string | null;
+            /** Format: uri */
+            previous: string | null;
+            results: components["schemas"]["Delivery"][];
+        };
+        PaginatedDependencyMappingList: {
+            count: number;
+            /** Format: uri */
+            next: string | null;
+            /** Format: uri */
+            previous: string | null;
+            results: components["schemas"]["DependencyMapping"][];
+        };
+        PaginatedFeedbackList: {
+            count: number;
+            /** Format: uri */
+            next: string | null;
+            /** Format: uri */
+            previous: string | null;
+            results: components["schemas"]["Feedback"][];
+        };
+        PaginatedHeldFeedbackList: {
+            count: number;
+            /** Format: uri */
+            next: string | null;
+            /** Format: uri */
+            previous: string | null;
+            results: components["schemas"]["HeldFeedback"][];
+        };
+        PaginatedJobList: {
+            count: number;
+            /** Format: uri */
+            next: string | null;
+            /** Format: uri */
+            previous: string | null;
+            results: components["schemas"]["Job"][];
+        };
         PaginatedNotificationList: {
             /** @example 123 */
             count: number;
@@ -1670,6 +1758,22 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["Notification"][];
+        };
+        PaginatedRecruiterQueueList: {
+            count: number;
+            /** Format: uri */
+            next: string | null;
+            /** Format: uri */
+            previous: string | null;
+            results: components["schemas"]["RecruiterQueue"][];
+        };
+        PaginatedShortlistList: {
+            count: number;
+            /** Format: uri */
+            next: string | null;
+            /** Format: uri */
+            previous: string | null;
+            results: components["schemas"]["Shortlist"][];
         };
         PaginatedSkillList: {
             /** @example 123 */
@@ -1994,7 +2098,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    admin_audit_log_list: {
+    admin_audit_log_retrieve: {
         parameters: {
             query?: {
                 /** @description Exact action or prefix ending in '.' (e.g. `auth.`) */
@@ -2018,7 +2122,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AuditLog"][];
+                    "application/json": components["schemas"]["PaginatedAuditLogList"];
                 };
             };
             /** @description Not signed in or token invalid: `not_authenticated` */
@@ -2041,7 +2145,7 @@ export interface operations {
             };
         };
     };
-    admin_dependency_mappings_list: {
+    admin_dependency_mappings_retrieve: {
         parameters: {
             query?: {
                 ecosystem?: string;
@@ -2058,7 +2162,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DependencyMapping"][];
+                    "application/json": components["schemas"]["PaginatedDependencyMappingList"];
                 };
             };
         };
@@ -2139,7 +2243,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                publicId: string;
+                public_id: string;
             };
             cookie?: never;
         };
@@ -2187,7 +2291,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                publicId: string;
+                public_id: string;
             };
             cookie?: never;
         };
@@ -2230,7 +2334,7 @@ export interface operations {
             };
         };
     };
-    admin_feedback_held_list: {
+    admin_feedback_held_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -2244,7 +2348,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HeldFeedback"][];
+                    "application/json": components["schemas"]["PaginatedHeldFeedbackList"];
                 };
             };
             /** @description Not signed in or token invalid: `not_authenticated` */
@@ -2267,7 +2371,7 @@ export interface operations {
             };
         };
     };
-    admin_notification_deliveries_list: {
+    admin_notification_deliveries_retrieve: {
         parameters: {
             query?: {
                 channel?: "email" | "sms";
@@ -2286,7 +2390,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Delivery"][];
+                    "application/json": components["schemas"]["PaginatedDeliveryList"];
                 };
             };
             /** @description Not signed in or token invalid: `not_authenticated` */
@@ -2314,7 +2418,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                publicId: string;
+                public_id: string;
             };
             cookie?: never;
         };
@@ -2366,7 +2470,7 @@ export interface operations {
             };
         };
     };
-    admin_recruiters_list: {
+    admin_recruiters_retrieve: {
         parameters: {
             query?: {
                 page?: number;
@@ -2383,7 +2487,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RecruiterQueue"][];
+                    "application/json": components["schemas"]["PaginatedRecruiterQueueList"];
                 };
             };
             /** @description Not signed in or token invalid: `not_authenticated` */
@@ -2411,7 +2515,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                publicId: string;
+                public_id: string;
             };
             cookie?: never;
         };
@@ -2465,7 +2569,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                publicId: string;
+                public_id: string;
             };
             cookie?: never;
         };
@@ -2514,7 +2618,7 @@ export interface operations {
             };
         };
     };
-    admin_skills_list: {
+    admin_skills_retrieve: {
         parameters: {
             query?: {
                 page?: number;
@@ -2530,7 +2634,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AdminSkill"][];
+                    "application/json": components["schemas"]["PaginatedAdminSkillList"];
                 };
             };
         };
@@ -2671,7 +2775,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AdminUser"][];
+                    "application/json": components["schemas"]["PaginatedAdminUserList"];
                 };
             };
             /** @description Not signed in or token invalid: `not_authenticated` */
@@ -2699,7 +2803,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                publicId: string;
+                public_id: string;
             };
             cookie?: never;
         };
@@ -2747,7 +2851,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                publicId: string;
+                public_id: string;
             };
             cookie?: never;
         };
@@ -2826,7 +2930,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnalysisListItem"][];
+                    "application/json": components["schemas"]["PaginatedAnalysisListItemList"];
                 };
             };
             /** @description Not signed in or token invalid: `not_authenticated` */
@@ -2923,7 +3027,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                publicId: string;
+                public_id: string;
             };
             cookie?: never;
         };
@@ -3561,7 +3665,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Candidate"][];
+                    "application/json": components["schemas"]["PaginatedCandidateList"];
                 };
             };
             /** @description Bad request: `validation_error` */
@@ -3598,7 +3702,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                githubLogin: string;
+                github_login: string;
             };
             cookie?: never;
         };
@@ -3646,7 +3750,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                githubLogin: string;
+                github_login: string;
             };
             cookie?: never;
         };
@@ -3718,7 +3822,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                githubLogin: string;
+                github_login: string;
             };
             cookie?: never;
         };
@@ -3743,7 +3847,7 @@ export interface operations {
             };
         };
     };
-    feedback_list: {
+    feedback_retrieve: {
         parameters: {
             query?: {
                 page?: number;
@@ -3760,7 +3864,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Feedback"][];
+                    "application/json": components["schemas"]["PaginatedFeedbackList"];
                 };
             };
             /** @description Not signed in or token invalid: `not_authenticated` */
@@ -3788,7 +3892,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                publicId: string;
+                public_id: string;
             };
             cookie?: never;
         };
@@ -3857,7 +3961,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Job"][];
+                    "application/json": components["schemas"]["PaginatedJobList"];
                 };
             };
             /** @description Not signed in or token invalid: `not_authenticated` */
@@ -3937,7 +4041,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                publicId: string;
+                public_id: string;
             };
             cookie?: never;
         };
@@ -3967,7 +4071,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                publicId: string;
+                public_id: string;
             };
             cookie?: never;
         };
@@ -3996,7 +4100,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                publicId: string;
+                public_id: string;
             };
             cookie?: never;
         };
@@ -4041,7 +4145,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                publicId: string;
+                public_id: string;
             };
             cookie?: never;
         };
@@ -4066,7 +4170,7 @@ export interface operations {
             };
         };
     };
-    jobs_matches_list: {
+    jobs_matches_retrieve: {
         parameters: {
             query?: {
                 minMatch?: number;
@@ -4075,7 +4179,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                publicId: string;
+                public_id: string;
             };
             cookie?: never;
         };
@@ -4086,7 +4190,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CandidateMatch"][];
+                    "application/json": components["schemas"]["PaginatedCandidateMatchList"];
                 };
             };
             /** @description Not found: `not_found` */
@@ -4427,7 +4531,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                publicId: string;
+                public_id: string;
             };
             cookie?: never;
         };
@@ -4471,7 +4575,7 @@ export interface operations {
             };
         };
     };
-    shortlists_list: {
+    shortlists_retrieve: {
         parameters: {
             query?: {
                 jobPostingId?: string;
@@ -4489,7 +4593,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Shortlist"][];
+                    "application/json": components["schemas"]["PaginatedShortlistList"];
                 };
             };
             /** @description Not signed in or token invalid: `not_authenticated` */
@@ -4587,7 +4691,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                publicId: string;
+                public_id: string;
             };
             cookie?: never;
         };
@@ -4616,7 +4720,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                publicId: string;
+                public_id: string;
             };
             cookie?: never;
         };

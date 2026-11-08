@@ -298,6 +298,7 @@ SPECTACULAR_SETTINGS = {
     "CAMELIZE_NAMES": False,
     "POSTPROCESSING_HOOKS": [
         "drf_spectacular.contrib.djangorestframework_camel_case.camelize_serializer_fields",
+        "apps.core.schema.restore_path_param_names",
         "drf_spectacular.hooks.postprocess_schema_enums",
     ],
     # Clean, stable enum names in generated TypeScript (instead of e.g. "RedisEnum").

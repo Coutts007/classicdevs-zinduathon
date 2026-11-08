@@ -33,3 +33,74 @@ export function recruiterMe(status: "pending" | "approved" | "rejected" | "suspe
     },
   });
 }
+
+import type { AnalysisDetail, Card } from "@/lib/api/types";
+
+export function makeCard(overrides: Partial<Card> = {}): Card {
+  return {
+    username: "amina-demo",
+    profile: {
+      username: "amina-demo",
+      name: "Amina Odhiambo",
+      avatarUrl: "https://avatars.example/a.png",
+      verifiedOwner: true,
+    },
+    signalScore: 94,
+    subScores: {
+      consistency: { value: 20, reason: "Active in 44 of the last 52 weeks" },
+      iteration: { value: 14, reason: "Median commit 100 lines" },
+      quality: { value: 20, reason: "Has tests, CI, a README and Docker or .env.example" },
+      breadth: { value: 20, reason: "1 strong skill, 11 moderate" },
+      ownership: { value: 20, reason: "Wrote most of the commits in 3 of 3 original repos" },
+    },
+    skills: [
+      {
+        name: "Testing",
+        category: "Practice",
+        label: "Strong",
+        evidence: 2,
+        repos: [
+          {
+            name: "shop-app",
+            url: "https://github.com/amina-demo/shop-app",
+            commits: 44,
+            firstCommit: "2026-01-05T09:00:00Z",
+            lastCommit: "2026-10-26T09:00:00Z",
+            hasTests: true,
+            hasCI: true,
+          },
+        ],
+      },
+    ],
+    claims: [{ skill: "Kubernetes", status: "Unverified" }],
+    flags: [
+      {
+        type: "one_shot_dump",
+        repo: "matatu-routes",
+        reason: "99% of the sampled code arrived in one commit.",
+      },
+    ],
+    aiSummary: "Strongest evidence is in Testing across 3 public repositories.",
+    reposAnalysed: 3,
+    commitsAnalysed: 71,
+    analysedAt: "2026-11-07T12:00:00Z",
+    ...overrides,
+  };
+}
+
+export function makeAnalysis(overrides: Partial<AnalysisDetail> = {}): AnalysisDetail {
+  return {
+    id: "a1",
+    githubLogin: "amina-demo",
+    status: "running",
+    progressStep: 1,
+    errorCode: "",
+    errorMessage: "",
+    signalScore: null,
+    createdAt: "2026-11-07T12:00:00Z",
+    completedAt: null,
+    card: null,
+    tips: [],
+    ...overrides,
+  };
+}

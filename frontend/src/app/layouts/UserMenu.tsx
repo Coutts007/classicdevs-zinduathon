@@ -65,9 +65,8 @@ export function UserMenu({ settingsPath }: { settingsPath: string }) {
           <Menu.Item
             className={item}
             onSelect={async () => {
-              // Leave the protected area first; otherwise the guard sends us to /login?next=…
-              navigate("/", { replace: true });
-              await signOut();
+              // The guard sees the deliberate sign-out and goes home instead of /login?next=…
+              await signOut("/");
               toast("Signed out");
             }}
           >

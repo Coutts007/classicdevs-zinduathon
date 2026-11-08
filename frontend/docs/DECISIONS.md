@@ -61,3 +61,25 @@ that path); `screenshots.spec.ts` opts back into motion to capture the real scen
 
 Clearing the session inside `/app` made the guard redirect to `/login?next=/app` before the
 "go home" navigation ran. The menu navigates to `/` first, then signs out.
+
+## F-012 Two backend schema bugs fixed while typing the card screens (Phase 3)
+
+- Hand-paginated list endpoints (`/analyses`, `/candidates`, `/feedback`, `/jobs`, `/shortlists`,
+  admin lists) were documented as bare arrays; the API returns `{count, next, previous, results}`.
+  The backend now documents them with `paginated(...)` and a test guards it.
+- The camelCase hook renamed path parameters (`publicId`) but not the `{public_id}` placeholders,
+  making the spec invalid (21 places) and breaking generated clients. A post-processing hook
+  restores the names; a test checks every path.
+
+## F-013 Signing out is known to the guards (Phase 2 fix, Phase 3)
+
+`signOut(exitTo)` records where to go; `RequireAuth` sends a deliberately signed-out user there
+instead of `/login?next=…`. Navigating before signing out raced with React Router's
+`startTransition` mode.
+
+## F-014 Analysis flow (Phase 3)
+
+`POST /analyses`: 202 → poll `GET /analyses/{id}` every 1.5 s (TanStack `refetchInterval`, paused in
+background tabs) until completed/failed; 200 → the reused card is shown at once; 409 → we find the
+running analysis in the history and resume polling it. Changed CV claims are saved first, because
+the backend reruns when claims change. The `SpaceBackdrop` glow follows `progressStep` 1–4.

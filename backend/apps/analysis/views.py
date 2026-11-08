@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 
 from apps.accounts.models import Role
 from apps.accounts.permissions import IsJobSeeker, is_admin
-from apps.core.schema import errors
+from apps.core.schema import errors, paginated
 
 from . import cards
 from .errors import GithubLoginRequired
@@ -190,6 +190,7 @@ class AnalysisListCreateView(APIView):
 
     @extend_schema(
         tags=["Analyses"],
+        operation_id="analyses_list",
         summary="Analysis history",
         description=(
             "Job seekers see their own analyses (scores over time are the iteration evidence). "
@@ -202,7 +203,7 @@ class AnalysisListCreateView(APIView):
             OpenApiParameter("pageSize", int),
         ],
         responses={
-            200: AnalysisListItemSerializer(many=True),
+            200: paginated(AnalysisListItemSerializer),
             **errors((401, "not_authenticated"), (403, "permission_denied")),
         },
     )

@@ -66,6 +66,36 @@ describe("route guards", () => {
     expect(screen.getByText("login page")).toBeInTheDocument();
   });
 
+  it("after a deliberate sign-out, goes to exitTo instead of login", () => {
+    const auth: AuthState = {
+      status: "signed-out",
+      user: null,
+      signIn: vi.fn(),
+      signOut: vi.fn(),
+      refreshMe: vi.fn(),
+      exitTo: "/",
+    };
+    render(
+      <AuthContext.Provider value={auth}>
+        <MemoryRouter initialEntries={["/app"]}>
+          <Routes>
+            <Route path="/" element={<p>home page</p>} />
+            <Route path="/login" element={<p>login page</p>} />
+            <Route
+              path="/app"
+              element={
+                <RequireAuth roles={["job_seeker"]}>
+                  <p>seeker area</p>
+                </RequireAuth>
+              }
+            />
+          </Routes>
+        </MemoryRouter>
+      </AuthContext.Provider>,
+    );
+    expect(screen.getByText("home page")).toBeInTheDocument();
+  });
+
   it("shows a splash while the session is being restored", () => {
     renderAt("/app", null, "loading");
     expect(screen.getByRole("status", { name: "Loading SkillProof" })).toBeInTheDocument();
