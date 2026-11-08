@@ -108,4 +108,3 @@ the real API: wrong password → 400, right password → 204.
   doesn't support shows a dash; SMS switches are disabled until `smsReady`.
 - Password change returns a fresh token pair, stored at once, so this device stays signed in while
   others are signed out.
-
