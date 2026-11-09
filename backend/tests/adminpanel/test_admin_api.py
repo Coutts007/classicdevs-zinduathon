@@ -225,3 +225,21 @@ def test_skills_and_mappings_change_detection(admin):
         Skill.objects.filter(name="Svelte").exists()
         and DependencyMapping.objects.filter(package_name="svelte").exists()
     )
+
+
+def test_mask_recipient_keeps_enough_to_recognise():
+    from apps.adminpanel.serializers import mask_recipient
+
+    assert mask_recipient("amina@jobseeker.demo") == "a***a@jobseeker.demo"
+    assert mask_recipient("+254712345678") == "+2547******78"
+    assert mask_recipient("") == ""
+
+
+def test_schema_types_admin_stats_deliveries_and_skills(client):
+    schemas = client.get("/api/v1/schema/", HTTP_ACCEPT="application/vnd.oai.openapi+json").json()[
+        "components"
+    ]["schemas"]
+    assert set(schemas["AnalysesPerDay"]["properties"]) == {"date", "total", "completed"}
+    assert "rate" in schemas["DeliveryRate"]["properties"]
+    assert {"title", "body", "providerResponse"} <= set(schemas["Delivery"]["properties"])
+    assert "aliases" in schemas["AdminSkillOut"]["properties"]

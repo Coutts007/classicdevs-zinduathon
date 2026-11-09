@@ -253,9 +253,66 @@ const routes: RouteObject[] = [
     children: [
       {
         index: true,
+        handle: { title: "Overview" },
         ...lazyPage(
-          () => import("./pages/Placeholder"),
-          (m) => m.AppPlaceholder,
+          () => import("@/features/admin/OverviewPage"),
+          (m) => m.AdminOverviewPage,
+        ),
+      },
+      {
+        path: "recruiters",
+        handle: { title: "Recruiters" },
+        ...lazyPage(
+          () => import("@/features/admin/RecruitersPage"),
+          (m) => m.RecruitersPage,
+        ),
+      },
+      {
+        path: "users",
+        handle: { title: "Users" },
+        ...lazyPage(
+          () => import("@/features/admin/UsersPage"),
+          (m) => m.UsersPage,
+        ),
+      },
+      {
+        path: "analyses",
+        handle: { title: "Analyses" },
+        ...lazyPage(
+          () => import("@/features/admin/AnalysesPage"),
+          (m) => m.AdminAnalysesPage,
+        ),
+      },
+      {
+        path: "skills",
+        handle: { title: "Skills" },
+        ...lazyPage(
+          () => import("@/features/admin/SkillsPage"),
+          (m) => m.SkillsPage,
+        ),
+      },
+      {
+        path: "deliveries",
+        handle: { title: "Deliveries" },
+        ...lazyPage(
+          () => import("@/features/admin/DeliveriesPage"),
+          (m) => m.DeliveriesPage,
+        ),
+      },
+      {
+        path: "moderation",
+        handle: { title: "Moderation" },
+        ...lazyPage(
+          () => import("@/features/admin/ModerationPage"),
+          (m) => m.ModerationPage,
+        ),
+      },
+      {
+        path: "audit-log",
+        handle: { title: "Audit log" },
+        ...lazyPage(
+          () => import("@/features/admin/AuditLogPage"),
+          (m) => m.AuditLogPage,
         ),
       },
       {
@@ -264,6 +321,14 @@ const routes: RouteObject[] = [
         ...lazyPage(
           () => import("@/features/notifications/NotificationsPage"),
           (m) => m.NotificationsPage,
+        ),
+      },
+      {
+        path: "settings",
+        handle: { title: "Settings" },
+        ...lazyPage(
+          () => import("@/features/settings/SettingsPage"),
+          (m) => m.SettingsPage,
         ),
       },
     ],

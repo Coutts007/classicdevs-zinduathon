@@ -7,15 +7,29 @@ from apps.recruiting.models import Feedback
 from apps.skills.models import Category, DependencyMapping, Ecosystem, Skill
 
 
+class AnalysesPerDaySerializer(serializers.Serializer):
+    date = serializers.DateField()
+    total = serializers.IntegerField()
+    completed = serializers.IntegerField()
+
+
+class DeliveryRateSerializer(serializers.Serializer):
+    total = serializers.IntegerField(help_text="Excludes skipped")
+    ok = serializers.IntegerField(help_text="Sent, delivered or dry run")
+    failed = serializers.IntegerField()
+    skipped = serializers.IntegerField()
+    rate = serializers.FloatField(allow_null=True, help_text="ok / total, 0–1")
+
+
 class StatsSerializer(serializers.Serializer):
     users_by_role = serializers.DictField(child=serializers.IntegerField())
     pending_recruiters = serializers.IntegerField()
-    analyses_per_day = serializers.ListField(child=serializers.DictField())
+    analyses_per_day = AnalysesPerDaySerializer(many=True, help_text="Last 14 days")
     average_signal_score = serializers.FloatField(allow_null=True)
     feedback_sent = serializers.IntegerField()
     feedback_held = serializers.IntegerField()
     delivery_rates = serializers.DictField(
-        child=serializers.DictField(),
+        child=DeliveryRateSerializer(),
         help_text="Per channel: total, ok (sent/delivered/dry run), failed, skipped, rate",
     )
 
@@ -83,10 +97,27 @@ class ReviewSerializer(serializers.Serializer):
     note = serializers.CharField(required=False, allow_blank=True, max_length=500, default="")
 
 
+def mask_recipient(value: str) -> str:
+    """a***a@example.com / +2547******78: enough to recognise, not to copy."""
+    if not value:
+        return ""
+    if "@" in value:
+        name, domain = value.split("@", 1)
+        return f"{name[:1]}***{name[-1:] if len(name) > 1 else ''}@{domain}"
+    return value[:5] + "*" * max(0, len(value) - 7) + value[-2:]
+
+
 class DeliverySerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(source="public_id", read_only=True)
     kind = serializers.CharField(source="notification.kind")
     user = serializers.EmailField(source="notification.user.email")
+    recipient = serializers.SerializerMethodField(help_text="Masked")
+    title = serializers.CharField(source="notification.title", read_only=True)
+    body = serializers.CharField(source="notification.body", read_only=True)
+    provider_response = serializers.JSONField(read_only=True)
+
+    def get_recipient(self, obj) -> str:
+        return mask_recipient(obj.recipient)
 
     class Meta:
         model = Delivery
@@ -101,6 +132,9 @@ class DeliverySerializer(serializers.ModelSerializer):
             "attempts",
             "last_error",
             "provider_message_id",
+            "provider_response",
+            "title",
+            "body",
             "sent_at",
             "delivered_at",
             "created_at",
@@ -148,6 +182,15 @@ class HeldFeedbackSerializer(serializers.ModelSerializer):
 
     def get_recruiter(self, feedback) -> str | None:
         return feedback.recruiter.email if feedback.recruiter else None
+
+
+class AdminSkillOutSerializer(serializers.Serializer):
+    """Response shape of AdminSkillSerializer (aliases are read back from the related rows)."""
+
+    name = serializers.CharField()
+    slug = serializers.CharField()
+    category = serializers.ChoiceField(choices=Category.choices)
+    aliases = serializers.ListField(child=serializers.CharField())
 
 
 class AdminSkillSerializer(serializers.ModelSerializer):

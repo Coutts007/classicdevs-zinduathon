@@ -692,7 +692,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedAdminSkillList'
+                $ref: '#/components/schemas/PaginatedAdminSkillOutList'
           description: ''
     post:
       operationId: admin_skills_create
@@ -719,7 +719,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AdminSkill'
+                $ref: '#/components/schemas/AdminSkillOut'
           description: ''
         '400':
           content:
@@ -764,7 +764,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AdminSkill'
+                $ref: '#/components/schemas/AdminSkillOut'
           description: ''
         '400':
           content:
@@ -3733,21 +3733,26 @@ paths:
           description: 'Not allowed: `permission_denied`'
 components:
   schemas:
-    AdminSkill:
+    AdminSkillOut:
       type: object
+      description: Response shape of AdminSkillSerializer (aliases are read back from
+        the related rows).
       properties:
         name:
           type: string
-          maxLength: 80
         slug:
           type: string
-          maxLength: 80
-          pattern: ^[-a-zA-Z0-9_]+$
         category:
           $ref: '#/components/schemas/SkillCategoryEnum'
+        aliases:
+          type: array
+          items:
+            type: string
       required:
+      - aliases
       - category
       - name
+      - slug
     AdminSkillRequest:
       type: object
       properties:
@@ -3828,6 +3833,20 @@ components:
       - githubLogin
       - id
       - phoneVerified
+    AnalysesPerDay:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        total:
+          type: integer
+        completed:
+          type: integer
+      required:
+      - completed
+      - date
+      - total
     AnalysisCreateRequest:
       type: object
       properties:
@@ -4379,7 +4398,8 @@ components:
           $ref: '#/components/schemas/ProviderEnum'
         recipient:
           type: string
-          maxLength: 254
+          readOnly: true
+          description: Masked
         status:
           $ref: '#/components/schemas/DeliveryStatusEnum'
         attempts:
@@ -4392,6 +4412,14 @@ components:
         providerMessageId:
           type: string
           maxLength: 128
+        providerResponse:
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        body:
+          type: string
+          readOnly: true
         sentAt:
           type: string
           format: date-time
@@ -4405,11 +4433,15 @@ components:
           format: date-time
           readOnly: true
       required:
+      - body
       - channel
       - createdAt
       - id
       - kind
       - provider
+      - providerResponse
+      - recipient
+      - title
       - user
     DeliveryChannelEnum:
       enum:
@@ -4419,6 +4451,30 @@ components:
       description: |-
         * `email` - email
         * `sms` - sms
+    DeliveryRate:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Excludes skipped
+        ok:
+          type: integer
+          description: Sent, delivered or dry run
+        failed:
+          type: integer
+        skipped:
+          type: integer
+        rate:
+          type: number
+          format: double
+          nullable: true
+          description: ok / total, 0–1
+      required:
+      - failed
+      - ok
+      - rate
+      - skipped
+      - total
     DeliveryStatusEnum:
       enum:
       - queued
@@ -5041,7 +5097,7 @@ components:
         * `recruiter_rejected` - Recruiter rejected
         * `shortlisted` - Shortlisted
         * `profile_viewed_digest` - Weekly profile views
-    PaginatedAdminSkillList:
+    PaginatedAdminSkillOutList:
       type: object
       properties:
         count:
@@ -5057,7 +5113,7 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/AdminSkill'
+            $ref: '#/components/schemas/AdminSkillOut'
       required:
       - count
       - next
@@ -5946,8 +6002,8 @@ components:
         analysesPerDay:
           type: array
           items:
-            type: object
-            additionalProperties: {}
+            $ref: '#/components/schemas/AnalysesPerDay'
+          description: Last 14 days
         averageSignalScore:
           type: number
           format: double
@@ -5959,8 +6015,7 @@ components:
         deliveryRates:
           type: object
           additionalProperties:
-            type: object
-            additionalProperties: {}
+            $ref: '#/components/schemas/DeliveryRate'
           description: 'Per channel: total, ok (sent/delivered/dry run), failed, skipped,
             rate'
       required:

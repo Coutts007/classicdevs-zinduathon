@@ -7,7 +7,8 @@ import { AuthContext, type AuthState } from "@/lib/auth/auth-context";
 import { makeMe } from "@/test/fixtures";
 import { API, server } from "@/test/server";
 
-import { RegisterPage, registerSchema } from "./RegisterPage";
+import { RegisterPage } from "./RegisterPage";
+import { registerSchema } from "./register-schema";
 
 const base = {
   role: "job_seeker" as const,
