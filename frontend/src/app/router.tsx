@@ -3,9 +3,8 @@ import { createBrowserRouter, type RouteObject } from "react-router-dom";
 import { GuestOnly, RequireAuth, RoleLink } from "@/lib/auth/guards";
 import { env } from "@/lib/env";
 
+import { AppShell, AuthLayout } from "./lazy-layouts";
 import { lazyPage } from "./lazy-page";
-import { AppShell } from "./layouts/AppShell";
-import { AuthLayout } from "./layouts/AuthLayout";
 import { PublicLayout } from "./layouts/PublicLayout";
 import { NotFound, RouteError } from "./pages/SystemPages";
 

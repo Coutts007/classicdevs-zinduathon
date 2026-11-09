@@ -209,7 +209,7 @@ export function PrivacyNote() {
       <p className="mt-6 text-sm text-mist">
         Recruiters never see your email or phone. <X aria-hidden className="inline h-3.5 w-3.5" /> No selling
         of data.{" "}
-        <Link to="/privacy" className="text-flare-hot hover:underline">
+        <Link to="/privacy" className="text-flare-hot underline underline-offset-2 hover:text-ink">
           Read the privacy policy
         </Link>
       </p>

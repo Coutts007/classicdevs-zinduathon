@@ -1,32 +1,56 @@
-import { PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer } from "recharts";
-
 import type { Card, SubScoreKey } from "@/lib/api/types";
 import { SUB_SCORE_LABELS } from "@/lib/format";
 
 const KEYS: SubScoreKey[] = ["consistency", "iteration", "quality", "breadth", "ownership"];
 
+/**
+ * Five-axis radar as plain SVG. The public card is a landing page for recruiters, so it must not
+ * pull in a charting library (≈100 KB gzipped) for one shape.
+ */
 export function SubScoreRadar({ subScores }: { subScores: Card["subScores"] }) {
   const data = KEYS.map((k) => ({ key: SUB_SCORE_LABELS[k], value: subScores[k]?.value ?? 0 }));
+  const size = 260;
+  const c = size / 2;
+  const r = 78;
+  const point = (i: number, f: number) => {
+    const angle = -Math.PI / 2 + (i * 2 * Math.PI) / KEYS.length;
+    return [c + Math.cos(angle) * r * f, c + Math.sin(angle) * r * f] as const;
+  };
+  const ring = (f: number) => KEYS.map((_, i) => point(i, f).join(",")).join(" ");
+  const shape = data.map((d, i) => point(i, Math.max(0, Math.min(20, d.value)) / 20).join(",")).join(" ");
   return (
     <div
-      className="h-56 w-full"
+      className="flex h-56 w-full items-center justify-center"
       role="img"
       aria-label={`Sub-scores: ${data.map((d) => `${d.key} ${d.value} of 20`).join(", ")}`}
     >
-      <ResponsiveContainer>
-        <RadarChart data={data} outerRadius="64%" margin={{ top: 8, right: 28, bottom: 8, left: 28 }}>
-          <PolarGrid stroke="rgba(255,255,255,0.12)" />
-          <PolarAngleAxis dataKey="key" tick={{ fill: "rgb(160,160,172)", fontSize: 12 }} />
-          <PolarRadiusAxis domain={[0, 20]} tick={false} axisLine={false} />
-          <Radar
-            dataKey="value"
-            stroke="rgb(255,122,26)"
-            fill="rgb(255,122,26)"
-            fillOpacity={0.28}
-            isAnimationActive={false}
-          />
-        </RadarChart>
-      </ResponsiveContainer>
+      <svg viewBox={`0 0 ${size} ${size}`} className="h-full max-w-full overflow-visible" aria-hidden>
+        {[0.25, 0.5, 0.75, 1].map((f) => (
+          <polygon key={f} points={ring(f)} fill="none" stroke="rgba(255,255,255,0.12)" />
+        ))}
+        {KEYS.map((_, i) => {
+          const [x, y] = point(i, 1);
+          return <line key={i} x1={c} y1={c} x2={x} y2={y} stroke="rgba(255,255,255,0.12)" />;
+        })}
+        <polygon points={shape} fill="rgb(255 122 26 / 0.28)" stroke="rgb(255,122,26)" strokeWidth={1.5} />
+        {data.map((d, i) => {
+          const [x, y] = point(i, 1.22);
+          const anchor = Math.abs(x - c) < 4 ? "middle" : x > c ? "start" : "end";
+          return (
+            <text
+              key={d.key}
+              x={x}
+              y={y}
+              textAnchor={anchor}
+              dominantBaseline="middle"
+              fontSize={12}
+              fill="rgb(160,160,172)"
+            >
+              {d.key}
+            </text>
+          );
+        })}
+      </svg>
     </div>
   );
 }

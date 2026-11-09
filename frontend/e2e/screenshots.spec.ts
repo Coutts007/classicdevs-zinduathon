@@ -14,7 +14,7 @@ const WIDTHS = [
 type Shot = { name: string; path: string; ready?: (page: Page) => Promise<void> };
 
 const SHOTS: Shot[] = [
-  { name: "landing", path: "/", ready: (p) => p.waitForTimeout(8000) }, // intro + reveal (slow under software WebGL)
+  { name: "landing", path: "/?force-3d", ready: (p) => p.waitForTimeout(8000) }, // intro + reveal (slow under software WebGL)
   {
     name: "dev-ui",
     path: "/dev/ui",
