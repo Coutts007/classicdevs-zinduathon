@@ -63,6 +63,21 @@ def test_stats(admin):
     assert body["deliveryRates"]["email"]["rate"] is None
 
 
+def test_recruiter_queue_orders_oldest_first_unless_newest_is_asked_for(admin):
+    first = RecruiterFactory(profile__approval_status="pending")
+    second = RecruiterFactory(profile__approval_status="pending")
+    third = RecruiterFactory(profile__approval_status="pending")
+
+    def ids(**params):
+        rows = admin.get("/api/v1/admin/recruiters", {"status": "pending", **params}).json()
+        return [row["id"] for row in rows["results"]]
+
+    ids_oldest = [str(u.public_id) for u in (first, second, third)]
+    assert ids() == ids_oldest  # the review order is unchanged
+    assert ids(ordering="oldest") == ids_oldest
+    assert ids(ordering="newest") == list(reversed(ids_oldest))
+
+
 def test_recruiter_queue_and_review(admin, admin_user):
     pending = RecruiterFactory(profile__approval_status="pending")
     unverified = RecruiterFactory(profile__approval_status="pending", email_verified_at=None)

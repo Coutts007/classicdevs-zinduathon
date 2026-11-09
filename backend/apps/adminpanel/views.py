@@ -111,12 +111,21 @@ class RecruiterQueueView(AdminView):
         summary="Recruiter approval queue",
         parameters=[
             OpenApiParameter("status", str, enum=ApprovalStatus.values),
+            OpenApiParameter(
+                "ordering",
+                str,
+                enum=["oldest", "newest"],
+                description="oldest (default) is the review order; newest shows the latest.",
+            ),
             OpenApiParameter("page", int),
         ],
         responses={200: paginated(RecruiterQueueSerializer), **ADMIN_ERRORS},
     )
     def get(self, request):
-        queryset = RecruiterProfile.objects.select_related("user", "company").order_by("created_at")
+        newest = request.query_params.get("ordering") == "newest"
+        queryset = RecruiterProfile.objects.select_related("user", "company").order_by(
+            "-created_at" if newest else "created_at"
+        )
         if state := request.query_params.get("status"):
             queryset = queryset.filter(approval_status=state)
         return self.paginate(request, queryset, RecruiterQueueSerializer)

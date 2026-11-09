@@ -114,11 +114,23 @@ def _default_preferences(user: User) -> None:
     ensure_defaults(user)
 
 
+def _tell_admins_if_waiting(user: User) -> None:
+    """A recruiter who has just verified their email is now approvable: tell the admins."""
+    from apps.companies.models import ApprovalStatus
+    from apps.companies.services import notify_admins_recruiter_waiting
+
+    profile = getattr(user, "recruiter_profile", None)
+    if profile is not None and profile.approval_status == ApprovalStatus.PENDING:
+        transaction.on_commit(lambda: notify_admins_recruiter_waiting(profile))
+
+
 def verify_email(user: User, request=None) -> None:
     if user.email_verified_at is None:
         user.email_verified_at = timezone.now()
         user.save(update_fields=["email_verified_at", "updated_at"])
         audit.record("auth.email_verified", actor=user, target=user, request=request)
+        if user.role == Role.RECRUITER:
+            _tell_admins_if_waiting(user)
 
 
 # --- Passwords ---

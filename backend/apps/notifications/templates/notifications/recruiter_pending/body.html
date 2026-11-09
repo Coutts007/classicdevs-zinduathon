@@ -1,0 +1,6 @@
+{% extends "notifications/_base.html" %}
+{% block content %}
+<p><strong>{{ recruiter_name|default:"A recruiter" }}</strong>{% if job_title %} ({{ job_title }}){% endif %} from <strong>{{ company }}</strong> verified their email and is waiting for approval.</p>
+<p>Until you decide, they can sign in but cannot search candidates or contact anyone.</p>
+{% endblock %}
+{% block cta %}Review recruiters{% endblock %}

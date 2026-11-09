@@ -29,6 +29,7 @@ CHANNELS: dict[str, tuple[str, ...]] = {
     Kind.RECRUITER_APPROVED: ("in_app", "email", "sms"),
     Kind.RECRUITER_REJECTED: ("in_app", "email", "sms"),
     Kind.PROFILE_VIEWED_DIGEST: ("in_app", "email"),
+    Kind.RECRUITER_PENDING: ("in_app", "email"),
 }
 KINDS_BY_ROLE: dict[str, tuple[str, ...]] = {
     Role.JOB_SEEKER: (
@@ -39,10 +40,17 @@ KINDS_BY_ROLE: dict[str, tuple[str, ...]] = {
         Kind.PROFILE_VIEWED_DIGEST,
     ),
     Role.RECRUITER: (Kind.RECRUITER_APPROVED, Kind.RECRUITER_REJECTED),
-    Role.ADMIN: (),
+    Role.ADMIN: (Kind.RECRUITER_PENDING,),
 }
 # Account/status messages a user needs regardless of marketing-style consent.
-TRANSACTIONAL_EMAIL = {Kind.ANALYSIS_FAILED, Kind.RECRUITER_APPROVED, Kind.RECRUITER_REJECTED}
+# RECRUITER_PENDING is an operational message to admins (who give no marketing-style consent), so
+# its email is on by default; an admin can still turn it off in preferences.
+TRANSACTIONAL_EMAIL = {
+    Kind.ANALYSIS_FAILED,
+    Kind.RECRUITER_APPROVED,
+    Kind.RECRUITER_REJECTED,
+    Kind.RECRUITER_PENDING,
+}
 SMS_FOOTER = "Reply STOP to opt out"
 
 

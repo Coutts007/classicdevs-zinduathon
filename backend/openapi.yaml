@@ -485,6 +485,14 @@ paths:
       summary: Recruiter approval queue
       parameters:
       - in: query
+        name: ordering
+        schema:
+          type: string
+          enum:
+          - newest
+          - oldest
+        description: oldest (default) is the review order; newest shows the latest.
+      - in: query
         name: page
         schema:
           type: integer
@@ -5314,6 +5322,7 @@ components:
       - recruiter_rejected
       - shortlisted
       - profile_viewed_digest
+      - recruiter_pending
       type: string
       description: |-
         * `analysis_completed` - Analysis completed
@@ -5323,6 +5332,7 @@ components:
         * `recruiter_rejected` - Recruiter rejected
         * `shortlisted` - Shortlisted
         * `profile_viewed_digest` - Weekly profile views
+        * `recruiter_pending` - Recruiter awaiting approval
     PaginatedAdminSkillOutList:
       type: object
       properties:
@@ -5845,6 +5855,7 @@ components:
       - recruiter_rejected
       - shortlisted
       - profile_viewed_digest
+      - recruiter_pending
       type: string
       description: |-
         * `analysis_completed` - analysis_completed
@@ -5854,6 +5865,7 @@ components:
         * `recruiter_rejected` - recruiter_rejected
         * `shortlisted` - shortlisted
         * `profile_viewed_digest` - profile_viewed_digest
+        * `recruiter_pending` - recruiter_pending
     PreferenceChangeRequest:
       type: object
       properties:

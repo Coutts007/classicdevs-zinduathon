@@ -1,0 +1,1 @@
+{% autoescape off %}{{ recruiter_name|default:"A recruiter" }} from {{ company }} is waiting for approval{% endautoescape %}

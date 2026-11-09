@@ -18,6 +18,7 @@ const KIND_LABEL: Record<string, string> = {
   profileViewedDigest: "Weekly profile views",
   recruiterApproved: "Account approved",
   recruiterRejected: "Account not approved",
+  recruiterPending: "Recruiter awaiting approval",
 };
 const CHANNELS = [
   { key: "inApp", label: "In-app" },

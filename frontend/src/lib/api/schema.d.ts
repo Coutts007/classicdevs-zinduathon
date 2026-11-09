@@ -1756,9 +1756,10 @@ export interface components {
          *     * `recruiter_rejected` - Recruiter rejected
          *     * `shortlisted` - Shortlisted
          *     * `profile_viewed_digest` - Weekly profile views
+         *     * `recruiter_pending` - Recruiter awaiting approval
          * @enum {string}
          */
-        NotificationKindEnum: "analysis_completed" | "analysis_failed" | "recruiter_feedback" | "recruiter_approved" | "recruiter_rejected" | "shortlisted" | "profile_viewed_digest";
+        NotificationKindEnum: "analysis_completed" | "analysis_failed" | "recruiter_feedback" | "recruiter_approved" | "recruiter_rejected" | "shortlisted" | "profile_viewed_digest" | "recruiter_pending";
         PaginatedAdminSkillOutList: {
             count: number;
             /** Format: uri */
@@ -1984,9 +1985,10 @@ export interface components {
          *     * `recruiter_rejected` - recruiter_rejected
          *     * `shortlisted` - shortlisted
          *     * `profile_viewed_digest` - profile_viewed_digest
+         *     * `recruiter_pending` - recruiter_pending
          * @enum {string}
          */
-        PreferenceChangeKindEnum: "analysis_completed" | "analysis_failed" | "recruiter_feedback" | "recruiter_approved" | "recruiter_rejected" | "shortlisted" | "profile_viewed_digest";
+        PreferenceChangeKindEnum: "analysis_completed" | "analysis_failed" | "recruiter_feedback" | "recruiter_approved" | "recruiter_rejected" | "shortlisted" | "profile_viewed_digest" | "recruiter_pending";
         PreferenceChangeRequest: {
             kind: components["schemas"]["PreferenceChangeKindEnum"];
             channel: components["schemas"]["PreferenceChangeChannelEnum"];
@@ -2584,6 +2586,8 @@ export interface operations {
     admin_recruiters_retrieve: {
         parameters: {
             query?: {
+                /** @description oldest (default) is the review order; newest shows the latest. */
+                ordering?: "newest" | "oldest";
                 page?: number;
                 status?: "approved" | "pending" | "rejected" | "suspended";
             };
