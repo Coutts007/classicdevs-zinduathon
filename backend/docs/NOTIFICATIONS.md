@@ -20,15 +20,15 @@ flowchart LR
 
 ## Events and channels
 
-| Kind                                            | Recipient  | In-app | Email                                    | SMS                                             | Link         |
-| ----------------------------------------------- | ---------- | ------ | ---------------------------------------- | ----------------------------------------------- | ------------ |
-| `analysis_completed`                            | Job seeker | ✓      | Score, top 3 skills, tips                | ✓                                               | `/u/{login}` |
-| `analysis_failed`                               | Job seeker | ✓      | Reason + what to do (transactional)      | –                                               | `/dashboard` |
-| `recruiter_feedback`                            | Job seeker | ✓      | Company, recruiter, status, full message | ✓                                               | `/inbox`     |
-| `shortlisted`                                   | Job seeker | ✓      | ✓                                        | ✓                                               | `/inbox`     |
-| `recruiter_approved` / `recruiter_rejected`     | Recruiter  | ✓      | ✓ (transactional)                        | if opted in                                     | `/recruiter` |
-| `profile_viewed_digest` (Phase 6, Monday 08:00) | Job seeker | ✓      | if any views                             | –                                               | `/dashboard` |
-| Phone verification code                         | Anyone     | –      | –                                        | ✓, bypasses preferences, never stored or logged | –            |
+| Kind | Recipient | In-app | Email | SMS | Link |
+| --- | --- | --- | --- | --- | --- |
+| `analysis_completed` | Job seeker | ✓ | Score, top 3 skills, tips | ✓ | `/u/{login}` |
+| `analysis_failed` | Job seeker | ✓ | Reason + what to do (transactional) | – | `/dashboard` |
+| `recruiter_feedback` | Job seeker | ✓ | Company, recruiter, status, full message | ✓ | `/inbox` |
+| `shortlisted` | Job seeker | ✓ | ✓ | ✓ | `/inbox` |
+| `recruiter_approved` / `recruiter_rejected` | Recruiter | ✓ | ✓ (transactional) | if opted in | `/recruiter` |
+| `profile_viewed_digest` (Phase 6, Monday 08:00) | Job seeker | ✓ | if any views | – | `/dashboard` |
+| Phone verification code | Anyone | – | – | ✓, bypasses preferences, never stored or logged | – |
 
 Feedback and shortlist notifications are triggered from Phase 5; the digest from Phase 6.
 
@@ -86,10 +86,10 @@ number and message length (never the text). The demo can't break because of a mi
 
 ## Webhooks
 
-| Endpoint                                    | Purpose                                                                                                                                                                        |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Endpoint | Purpose |
+| --- | --- |
 | `POST /api/v1/webhooks/thrivewave/delivery` | Delivery report → `Delivery.status` `delivered` / `failed`, matched by `provider_message_id`. Idempotent; a late `failed` never overwrites `delivered`; unknown ids answer 200 |
-| `POST /api/v1/webhooks/thrivewave/inbound`  | Inbound SMS. STOP / STOPALL / UNSUBSCRIBE / CANCEL / END / QUIT turns off all SMS preferences for that number and records SMS consent as withdrawn                             |
+| `POST /api/v1/webhooks/thrivewave/inbound` | Inbound SMS. STOP / STOPALL / UNSUBSCRIBE / CANCEL / END / QUIT turns off all SMS preferences for that number and records SMS consent as withdrawn |
 
 Both require `X-Thrivewave-Signature: sha256=<hex HMAC-SHA256 of the raw body with
 THRIVEWAVE_WEBHOOK_SECRET>` or `X-Thrivewave-Secret: <secret>` (`webhooks.verify_signature`, easy
