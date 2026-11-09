@@ -14,6 +14,11 @@ urlpatterns = [
     path("auth/github", views.GithubUnlinkView.as_view(), name="auth-github-unlink"),
     path("auth/github/dev-login", dev_views.dev_login, name="auth-github-dev-login"),
     path("auth/github/dev-callback", dev_views.dev_callback, name="auth-github-dev-callback"),
+    path(
+        "auth/google/authorize", views.GoogleAuthorizeView.as_view(), name="auth-google-authorize"
+    ),
+    path("auth/google/callback", views.GoogleCallbackView.as_view(), name="auth-google-callback"),
+    path("auth/google", views.GoogleUnlinkView.as_view(), name="auth-google-unlink"),
     path("auth/email/verify", views.EmailVerifyView.as_view(), name="auth-email-verify"),
     path("auth/email/resend", views.EmailResendView.as_view(), name="auth-email-resend"),
     path("auth/password/reset", views.PasswordResetView.as_view(), name="auth-password-reset"),

@@ -108,6 +108,37 @@ to the real callback endpoint and shows the tokens; paste the access token into 
 **Authorize** button. To test linking, paste an existing account's access token into the page's
 box and retry. Both pages answer 404 in production settings.
 
+## Sign in with Google (OpenID Connect)
+
+Same shape as the GitHub flow, so the SPA code is almost identical: `GET /auth/google/authorize`
+returns `{authorizeUrl, state}` (signed, 10 minutes, a different salt from GitHub's, so a GitHub
+`state` is refused here); the SPA sends the browser to Google, which returns to
+`/auth/google/callback?code&state`; the SPA posts both to `POST /auth/google/callback`.
+
+- Resolution order: known Google account → sign in; signed-in caller → link; verified email that
+  matches an existing user → link and sign in (an unverified account at that address loses its
+  password, as with GitHub); otherwise create a job seeker (needs `acceptTerms`). Recruiters cannot
+  sign up with Google, but a recruiter can link it and sign in.
+- Only an email Google marks `email_verified` is used. No Google tokens are stored.
+- A Google-only job seeker can sign in but must connect GitHub before an analysis can run, as with
+  email-and-password job seekers.
+- `DELETE /auth/google` and `DELETE /auth/github` are refused (409 `password_required`) only when
+  the account would be left with no way to sign in (no password, no other provider).
+- Every GitHub or Google sign-in (not linking from settings) emails the job seeker's account
+  address, saying which account signed in and when.
+- Not configured (no id or secret): 503 `google_not_configured`; nothing else is affected.
+
+### Setting up the Google OAuth client
+
+1. Google Cloud Console → create or pick a project → **OAuth consent screen**: user type
+   External, add the app name and your email. While in *Testing* only listed test users can sign in.
+2. **Credentials → Create credentials → OAuth client ID → Web application.**
+3. **Authorized redirect URIs**: `http://localhost:5173/auth/google/callback` (add the production
+   `https://<frontend>/auth/google/callback` too). Authorized JavaScript origins are not needed.
+4. Put `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET` in `backend/.env` (never in git)
+   and restart the API. Leave `GOOGLE_OAUTH_REDIRECT_URI` unset to use `FRONTEND_URL` +
+   `/auth/google/callback`, or set it to the same URL as in the console.
+
 ## Roles and permissions
 
 | Class | Allows |

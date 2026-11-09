@@ -1,0 +1,1 @@
+{% if created %}Welcome to SkillProof{% else %}New {{ provider }} sign-in to SkillProof{% endif %}

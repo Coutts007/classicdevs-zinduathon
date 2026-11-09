@@ -393,7 +393,7 @@ export interface paths {
         post?: never;
         /**
          * Unlink GitHub
-         * @description Refused when the account has no password (you would be locked out).
+         * @description Refused when it is the only way to sign in (no password, no Google).
          */
         delete: operations["auth_github_destroy"];
         options?: never;
@@ -435,6 +435,66 @@ export interface paths {
          * @description Exchanges GitHub's `code`. Known GitHub account → signs in. Signed-in caller → links GitHub to them. Matching verified email → links and signs in. Otherwise creates a job seeker (requires `acceptTerms` at authorize time). Stores the GitHub token encrypted.
          */
         post: operations["auth_github_callback_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/google": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Disconnect Google
+         * @description Refused when it is the only way to sign in (no password, no GitHub).
+         */
+        delete: operations["auth_google_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/google/authorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Start Google sign-in
+         * @description Returns the Google URL to send the browser to, with a signed `state` (10 minutes). Keep `state` in sessionStorage and compare it on the callback page.
+         */
+        get: operations["auth_google_authorize_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/google/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Finish Google sign-in
+         * @description Exchanges Google's `code`. Known Google account → signs in. Signed-in caller → links Google to them. Matching verified email → links and signs in. Otherwise creates a job seeker (requires `acceptTerms` at authorize time). Stores no Google tokens. A Google-only job seeker must connect GitHub before an analysis can run.
+         */
+        post: operations["auth_google_callback_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -854,7 +914,7 @@ export interface paths {
         post?: never;
         /**
          * Delete my account
-         * @description Permanently deletes your account and personal data, and signs you out everywhere. Send your password; accounts without one must have signed in with GitHub in the last 10 minutes. Feedback you sent as a recruiter stays with its recipient, anonymised. Admin accounts are removed by another admin.
+         * @description Permanently deletes your account and personal data, and signs you out everywhere. Send your password; accounts without one must have signed in (GitHub or Google) in the last 10 minutes. Feedback you sent as a recruiter stays with its recipient, anonymised. Admin accounts are removed by another admin.
          */
         delete: operations["me_destroy"];
         options?: never;
@@ -1217,7 +1277,7 @@ export interface components {
             ipAddress?: string | null;
             userAgent?: string;
         };
-        /** @description Same shape from register, login and the GitHub callback. */
+        /** @description Same shape from register, login and the GitHub and Google callbacks. */
         AuthResponse: {
             access: string;
             refresh: string;
@@ -1497,7 +1557,7 @@ export interface components {
             /** Format: date-time */
             connectedAt?: string;
         };
-        /** @description Same shape from register, login and the GitHub callback. */
+        /** @description Same shape from register, login and the GitHub and Google callbacks. */
         GithubAuthResponse: {
             access: string;
             refresh: string;
@@ -1511,6 +1571,24 @@ export interface components {
             state: string;
         };
         GithubCallbackRequest: {
+            code: string;
+            state: string;
+        };
+        GoogleAccount: {
+            /**
+             * Format: email
+             * @description Lowercase, verified by Google
+             */
+            email: string;
+            /** Format: date-time */
+            connectedAt?: string;
+        };
+        GoogleAuthorizeResponse: {
+            /** Format: uri */
+            authorizeUrl: string;
+            state: string;
+        };
+        GoogleCallbackRequest: {
             code: string;
             state: string;
         };
@@ -1639,6 +1717,7 @@ export interface components {
             /** Format: date-time */
             dateJoined?: string;
             readonly github: components["schemas"]["GithubAccount"] | null;
+            readonly google: components["schemas"]["GoogleAccount"] | null;
             readonly jobSeekerProfile: components["schemas"]["JobSeekerProfile"] | null;
             readonly recruiterProfile: components["schemas"]["RecruiterProfile"] | null;
         };
@@ -3278,6 +3357,131 @@ export interface operations {
                 };
             };
             /** @description Dependency unavailable: `github_not_configured` */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    auth_google_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request: `google_not_linked` */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflict: `password_required` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    auth_google_authorize_retrieve: {
+        parameters: {
+            query?: {
+                /** @description Required true for a first-time Google sign-up. */
+                acceptTerms?: boolean;
+                emailFeedback?: boolean;
+                /** @description True when linking Google to the signed-in account from settings. */
+                link?: boolean;
+                /** @description For new sign-ups. Default job_seeker. Recruiters can only link. */
+                role?: "job_seeker" | "recruiter";
+                smsFeedback?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoogleAuthorizeResponse"];
+                };
+            };
+            /** @description Dependency unavailable: `google_not_configured` */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    auth_google_callback_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoogleCallbackRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["GoogleCallbackRequest"];
+                "multipart/form-data": components["schemas"]["GoogleCallbackRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GithubAuthResponse"];
+                };
+            };
+            /** @description Bad request: `state_invalid`, `google_oauth_failed`, `google_email_unverified`, `terms_required`, `recruiter_signup_requires_email` */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Conflict: `google_already_linked` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Dependency unavailable: `google_not_configured` */
             503: {
                 headers: {
                     [name: string]: unknown;

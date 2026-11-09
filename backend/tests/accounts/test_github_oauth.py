@@ -271,3 +271,79 @@ class TestUnlink:
 def test_token_scope_and_claims_with_issue_tokens():
     account = GithubAccountFactory(login="Dev-1")
     assert AccessToken(issue_tokens(account.user)["access"])["githubLogin"] == "dev-1"
+
+
+class TestSignInEmail:
+    """A job seeker is emailed when GitHub signs in to their account."""
+
+    @responses.activate
+    def test_returning_sign_in_emails_the_account_address(
+        self, api_client, mailoutbox, django_capture_on_commit_callbacks
+    ):
+        account = GithubAccountFactory(github_id=42, login="wanjiru-dev")
+        mock_github()
+        with django_capture_on_commit_callbacks(execute=True):
+            api_client.post(CALLBACK, {"code": "abc", "state": state()})
+
+        assert len(mailoutbox) == 1
+        message = mailoutbox[0]
+        assert message.to == [account.user.email]
+        assert message.subject == "New GitHub sign-in to SkillProof"
+        assert "@Wanjiru-Dev" in message.body
+        assert "/app/settings" in message.body
+
+    @responses.activate
+    def test_signing_up_with_github_says_welcome(
+        self, api_client, mailoutbox, django_capture_on_commit_callbacks
+    ):
+        mock_github()
+        with django_capture_on_commit_callbacks(execute=True):
+            api_client.post(CALLBACK, {"code": "abc", "state": state()})
+
+        assert [m.subject for m in mailoutbox] == ["Welcome to SkillProof"]
+        assert mailoutbox[0].to == ["wanjiru@example.com"]
+
+    @responses.activate
+    def test_linking_from_settings_is_not_a_sign_in(
+        self, auth_client, mailoutbox, django_capture_on_commit_callbacks
+    ):
+        user = JobSeekerFactory(email="different@example.com")
+        mock_github()
+        with django_capture_on_commit_callbacks(execute=True):
+            auth_client(user).post(CALLBACK, {"code": "abc", "state": state(link=True)})
+
+        assert mailoutbox == []
+
+    @responses.activate
+    def test_recruiters_are_not_emailed(
+        self, api_client, mailoutbox, django_capture_on_commit_callbacks
+    ):
+        from tests.factories import RecruiterFactory
+
+        recruiter = RecruiterFactory()
+        GithubAccountFactory(user=recruiter, github_id=42, login="wanjiru-dev")
+        mock_github()
+        with django_capture_on_commit_callbacks(execute=True):
+            api_client.post(CALLBACK, {"code": "abc", "state": state()})
+
+        assert mailoutbox == []
+
+    @responses.activate
+    def test_a_mail_outage_does_not_block_sign_in(
+        self, api_client, settings, django_capture_on_commit_callbacks
+    ):
+        settings.EMAIL_BACKEND = "tests.accounts.test_github_oauth.BrokenBackend"
+        GithubAccountFactory(github_id=42, login="wanjiru-dev")
+        mock_github()
+        with django_capture_on_commit_callbacks(execute=True):
+            response = api_client.post(CALLBACK, {"code": "abc", "state": state()})
+
+        assert response.status_code == 200
+
+
+class BrokenBackend:
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def send_messages(self, messages):
+        raise ConnectionError("smtp down")

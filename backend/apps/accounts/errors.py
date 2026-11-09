@@ -50,10 +50,40 @@ class GithubNotLinked(ApiError):
     default_detail = "No GitHub account is linked."
 
 
+class GoogleNotConfigured(ApiError):
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    default_code = "google_not_configured"
+    default_detail = "Google sign-in is not configured on this server."
+
+
+class GoogleOAuthFailed(ApiError):
+    default_code = "google_oauth_failed"
+    default_detail = "Google did not accept the sign-in. Start again."
+
+
+class GoogleEmailUnverified(ApiError):
+    default_code = "google_email_unverified"
+    default_detail = "Your Google account's email address is not verified."
+
+
+class GoogleAlreadyLinked(ApiError):
+    status_code = status.HTTP_409_CONFLICT
+    default_code = "google_already_linked"
+    default_detail = "That Google account is linked to a different SkillProof account."
+
+
+class GoogleNotLinked(ApiError):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_code = "google_not_linked"
+    default_detail = "No Google account is linked."
+
+
 class PasswordRequired(ApiError):
     status_code = status.HTTP_409_CONFLICT
     default_code = "password_required"
-    default_detail = "Set a password before unlinking GitHub, or you would be locked out."
+    default_detail = (
+        "Set a password or connect another sign-in method first, or you would be locked out."
+    )
 
 
 class TermsRequired(ApiError):

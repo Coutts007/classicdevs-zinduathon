@@ -97,6 +97,7 @@ If you ever scale to several instances, move worker and beat to a VM (below) and
 | `FIELD_ENCRYPTION_KEY` | `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`. **Never change it** after users link GitHub, or their stored tokens can't be read |
 | `GITHUB_TOKEN` | Fine-grained token, public read access |
 | `GITHUB_OAUTH_CLIENT_ID` / `_SECRET` / `GITHUB_OAUTH_REDIRECT_URI` | Production OAuth app |
+| `GOOGLE_OAUTH_CLIENT_ID` / `_SECRET` / `GOOGLE_OAUTH_REDIRECT_URI` | Optional. Production Google OAuth client; `https://<frontend>/auth/google/callback` |
 | `LLM_API_KEY` (+ optional `LLM_MODEL`) | Anthropic key; empty = template summaries |
 | `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `DEFAULT_FROM_EMAIL` | Your SMTP provider |
 | `SMS_DRY_RUN` | `true` until the Thrivewave format is confirmed |

@@ -15,7 +15,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from apps.core import audit
 from apps.core.schema import errors
 
-from . import emails, github_oauth, services, tokens
+from . import emails, github_oauth, google_oauth, services, tokens
 from .errors import InvalidCredentials, RefreshTokenInvalid, TokenInvalid
 from .models import Role, User
 from .serializers import (
@@ -24,6 +24,8 @@ from .serializers import (
     GithubAuthorizeResponseSerializer,
     GithubAuthResponseSerializer,
     GithubCallbackSerializer,
+    GoogleAuthorizeResponseSerializer,
+    GoogleCallbackSerializer,
     LoginSerializer,
     MeSerializer,
     MeUpdateSerializer,
@@ -39,7 +41,12 @@ from .serializers import (
 )
 from .throttles import LoginThrottle
 
-_USER_RELATED = ("job_seeker_profile", "recruiter_profile__company", "github_account")
+_USER_RELATED = (
+    "job_seeker_profile",
+    "recruiter_profile__company",
+    "github_account",
+    "google_account",
+)
 
 
 def fresh_user(user: User) -> User:
@@ -506,12 +513,105 @@ class GithubUnlinkView(APIView):
     @extend_schema(
         tags=["Auth"],
         summary="Unlink GitHub",
-        description="Refused when the account has no password (you would be locked out).",
+        description="Refused when it is the only way to sign in (no password, no Google).",
         request=None,
         responses={204: None, **errors((400, "github_not_linked"), (409, "password_required"))},
     )
     def delete(self, request):
         services.unlink_github(request.user, request)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# --- Google OAuth ---
+
+
+GOOGLE_AUTHORIZE_PARAMS = [
+    OpenApiParameter(
+        "role",
+        str,
+        enum=["job_seeker", "recruiter"],
+        description="For new sign-ups. Default job_seeker. Recruiters can only link.",
+    ),
+    OpenApiParameter(
+        "link", bool, description="True when linking Google to the signed-in account from settings."
+    ),
+    OpenApiParameter(
+        "acceptTerms", bool, description="Required true for a first-time Google sign-up."
+    ),
+    OpenApiParameter("emailFeedback", bool),
+    OpenApiParameter("smsFeedback", bool),
+]
+
+
+class GoogleAuthorizeView(APIView):
+    permission_classes = (AllowAny,)
+    authentication_classes = ()
+
+    @extend_schema(
+        tags=["Auth"],
+        summary="Start Google sign-in",
+        description=(
+            "Returns the Google URL to send the browser to, with a signed `state` (10 minutes). "
+            "Keep `state` in sessionStorage and compare it on the callback page."
+        ),
+        parameters=GOOGLE_AUTHORIZE_PARAMS,
+        responses={
+            200: GoogleAuthorizeResponseSerializer,
+            **errors((503, "google_not_configured")),
+        },
+    )
+    def get(self, request):
+        state = google_oauth.make_state(build_state(request))
+        return Response({"authorize_url": google_oauth.authorize_url(state), "state": state})
+
+
+class GoogleCallbackView(APIView):
+    permission_classes = (AllowAny,)  # a JWT is optional: present when linking from settings
+
+    @extend_schema(
+        tags=["Auth"],
+        summary="Finish Google sign-in",
+        description=(
+            "Exchanges Google's `code`. Known Google account → signs in. Signed-in caller → links "
+            "Google to them. Matching verified email → links and signs in. Otherwise creates a job "
+            "seeker (requires `acceptTerms` at authorize time). Stores no Google tokens. A "
+            "Google-only job seeker must connect GitHub before an analysis can run."
+        ),
+        request=GoogleCallbackSerializer,
+        responses={
+            200: GithubAuthResponseSerializer,
+            **errors(
+                (400, "state_invalid"),
+                (400, "google_oauth_failed"),
+                (400, "google_email_unverified"),
+                (400, "terms_required"),
+                (400, "recruiter_signup_requires_email"),
+                (409, "google_already_linked"),
+                (503, "google_not_configured"),
+            ),
+        },
+    )
+    def post(self, request):
+        serializer = GoogleCallbackSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        state = google_oauth.read_state(serializer.validated_data["state"])
+        identity = google_oauth.exchange_code(serializer.validated_data["code"])
+        user, created = services.google_sign_in(
+            identity, state, current_user=request.user, request=request
+        )
+        return Response(auth_payload(user, created=created))
+
+
+class GoogleUnlinkView(APIView):
+    @extend_schema(
+        tags=["Auth"],
+        summary="Disconnect Google",
+        description="Refused when it is the only way to sign in (no password, no GitHub).",
+        request=None,
+        responses={204: None, **errors((400, "google_not_linked"), (409, "password_required"))},
+    )
+    def delete(self, request):
+        services.unlink_google(request.user, request)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -581,8 +681,8 @@ class MeView(APIView):
         summary="Delete my account",
         description=(
             "Permanently deletes your account and personal data, and signs you out everywhere. "
-            "Send your password; accounts without one must have signed in with GitHub in the "
-            "last 10 minutes. Feedback you sent as a recruiter stays with its recipient, "
+            "Send your password; accounts without one must have signed in (GitHub or Google) "
+            "in the last 10 minutes. Feedback you sent as a recruiter stays with its recipient, "
             "anonymised. Admin accounts are removed by another admin."
         ),
         request=MeDeleteSerializer,
@@ -603,9 +703,7 @@ class MeView(APIView):
             if not user.check_password(password):
                 raise ValidationError({"password": ["Password is wrong."]})
         elif not privacy.can_delete_without_password(user):
-            raise ValidationError(
-                {"password": ["Sign in with GitHub again, then delete within 10 minutes."]}
-            )
+            raise ValidationError({"password": ["Sign in again, then delete within 10 minutes."]})
         privacy.delete_account(user, request)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
