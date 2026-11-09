@@ -1,57 +1,18 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import * as Switch from "@radix-ui/react-switch";
 import { Copy, ExternalLink } from "lucide-react";
-import { useId } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
 import { GlassPanel } from "@/components/glass/Glass";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/States";
+import { Toggle } from "@/components/ui/Toggle";
 import { SkillCard, SkillCardSkeleton } from "@/features/card/SkillCard";
 import { api, unwrap } from "@/lib/api/client";
 import { ApiError, userMessage } from "@/lib/api/errors";
 import { qk } from "@/lib/api/query-keys";
 import { useAuth } from "@/lib/auth/auth-context";
 import { env } from "@/lib/env";
-
-function Toggle({
-  label,
-  description,
-  checked,
-  onChange,
-  disabled,
-}: {
-  label: string;
-  description: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  disabled?: boolean;
-}) {
-  const id = useId();
-  return (
-    <div className="flex items-start justify-between gap-4">
-      <div>
-        <label htmlFor={id} className="block cursor-pointer font-medium">
-          {label}
-        </label>
-        <p id={`${id}-desc`} className="text-sm text-mist">
-          {description}
-        </p>
-      </div>
-      <Switch.Root
-        id={id}
-        aria-describedby={`${id}-desc`}
-        checked={checked}
-        onCheckedChange={onChange}
-        disabled={disabled}
-        className="relative mt-1 h-6 w-11 shrink-0 rounded-full border border-line bg-white/10 transition data-[state=checked]:border-flare data-[state=checked]:bg-flare"
-      >
-        <Switch.Thumb className="block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition data-[state=checked]:translate-x-[22px]" />
-      </Switch.Root>
-    </div>
-  );
-}
 
 export function MyCardPage() {
   const { user, refreshMe } = useAuth();

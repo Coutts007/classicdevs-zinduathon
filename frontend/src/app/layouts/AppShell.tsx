@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useMatches, useNavigate } from "react-router-dom";
 
 import { PhoneVerifyDialog } from "@/features/auth/PhoneVerifyDialog";
+import { NotificationBell } from "@/features/notifications/NotificationBell";
 
 import { EmailBanner } from "./EmailBanner";
 import { UserMenu } from "./UserMenu";
@@ -30,9 +31,14 @@ const NAV: Record<Role, { to: string; label: string; icon: typeof LayoutDashboar
     { to: "/app/history", label: "History", icon: LineChart },
     { to: "/app/inbox", label: "Inbox", icon: Inbox },
     { to: "/app/jobs", label: "Jobs", icon: Briefcase },
+    { to: "/app/notifications", label: "Notifications", icon: Bell },
     { to: "/app/settings", label: "Settings", icon: Settings },
   ],
-  recruiter: [{ to: "/recruiter", label: "Dashboard", icon: LayoutDashboard }],
+  recruiter: [
+    { to: "/recruiter", label: "Dashboard", icon: LayoutDashboard },
+    { to: "/recruiter/notifications", label: "Notifications", icon: Bell },
+    { to: "/recruiter/settings", label: "Settings", icon: Settings },
+  ],
   admin: [{ to: "/admin", label: "Overview", icon: LayoutDashboard }],
 };
 
@@ -60,6 +66,10 @@ export function AppShell({ area }: { area: Role }) {
   }, [location, navigate]);
   const settingsPath =
     area === "job_seeker" ? "/app/settings" : area === "recruiter" ? "/recruiter/settings" : "/admin";
+  const notificationsPath =
+    area === "admin"
+      ? "/admin/notifications"
+      : `${area === "job_seeker" ? "/app" : "/recruiter"}/notifications`;
   return (
     <div className="relative min-h-screen">
       <SpaceBackdrop />
@@ -91,13 +101,7 @@ export function AppShell({ area }: { area: Role }) {
         <header className="glass-panel sticky top-4 z-30 mx-4 mt-4 flex h-14 items-center justify-between rounded-glass px-5">
           <h1 className="text-base font-semibold">{title}</h1>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              aria-label="Notifications"
-              className="grid h-9 w-9 place-items-center rounded-full text-mist hover:bg-white/10 hover:text-ink"
-            >
-              <Bell className="h-4 w-4" />
-            </button>
+            <NotificationBell allPath={notificationsPath} />
             <UserMenu settingsPath={settingsPath} />
           </div>
         </header>

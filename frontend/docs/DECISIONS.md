@@ -83,3 +83,28 @@ instead of `/login?next=…`. Navigating before signing out raced with React Rou
 background tabs) until completed/failed; 200 → the reused card is shown at once; 409 → we find the
 running analysis in the history and resume polling it. Changed CV claims are saved first, because
 the backend reruns when claims change. The `SpaceBackdrop` glow follows `progressStep` 1–4.
+
+## F-015 Inbox status filter is client-side (Phase 4)
+
+`GET /feedback` has no `status` query parameter, so the inbox filters the current page (20 items)
+in the browser and keeps the filter in the URL (`?status=`). If inboxes grow past one page, add a
+`status` filter to the backend list and pass it through; the UI already reads it from the URL.
+
+## F-016 `DELETE /me` body isn't in the schema (Phase 4)
+
+drf-spectacular never documents request bodies for DELETE, so the generated type for
+`DELETE /api/v1/me` has no body even though the view reads `{password}` (`MeDeleteSerializer`).
+The settings page sends it with a single `as never` cast, commented at the call. Verified against
+the real API: wrong password → 400, right password → 204.
+
+## F-017 Notifications and preferences (Phase 4)
+
+- The bell polls the unread list (`?unread=true&pageSize=5`) every 60 s, paused in background tabs;
+  the count comes from the page's `count`. Mark read / mark all read are optimistic with rollback.
+- Notification `linkPath` values are role-neutral (`/inbox`); the bell maps them into the current
+  area (`/app/inbox`).
+- The preferences matrix renders whatever kinds and channels `GET /me/notification-preferences`
+  returns (camelCase keys) and sends `PUT` with snake_case `kind`/`channel` values. A channel a kind
+  doesn't support shows a dash; SMS switches are disabled until `smsReady`.
+- Password change returns a fresh token pair, stored at once, so this device stays signed in while
+  others are signed out.

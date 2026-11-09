@@ -75,6 +75,24 @@ const AUTHED: { name: string; path: string; account: string; ready?: (page: Page
     account: "amina@jobseeker.demo",
     ready: (p) => p.getByText("Signal Score over time").waitFor(),
   },
+  {
+    name: "app-inbox",
+    path: "/app/inbox",
+    account: "amina@jobseeker.demo",
+    ready: (p) => p.getByText("Savanna", { exact: false }).first().waitFor(),
+  },
+  {
+    name: "app-notifications",
+    path: "/app/notifications",
+    account: "amina@jobseeker.demo",
+    ready: (p) => p.getByRole("radiogroup", { name: "Show" }).waitFor(),
+  },
+  {
+    name: "app-settings-notifications",
+    path: "/app/settings?tab=notifications",
+    account: "amina@jobseeker.demo",
+    ready: (p) => p.getByRole("switch").first().waitFor(),
+  },
 ];
 
 for (const size of WIDTHS) {
