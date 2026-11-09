@@ -1,0 +1,8 @@
+<!doctype html>
+<html><body style="font-family:Arial,sans-serif;color:#1a1a1a;max-width:560px;margin:auto;padding:24px">
+<p>Hi {{ user.full_name|default:"there" }},</p>
+{% if created %}<p>You just created your SkillProof account with {{ provider }} (<strong>{{ handle }}</strong>).</p>{% else %}<p>You just signed in to SkillProof with {{ provider }} (<strong>{{ handle }}</strong>).</p>{% endif %}
+<p style="color:#555">{{ when }}</p>
+<p>If this was you, there is nothing to do.</p>
+<p>If it wasn't you, <a href="{{ settings_link }}">open your account settings</a>, disconnect {{ provider }} and change your password.</p>
+</body></html>

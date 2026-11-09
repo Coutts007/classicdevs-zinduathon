@@ -13,7 +13,7 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Field, Input } from "@/components/ui/Field";
 import { PasswordStrength } from "@/components/ui/PasswordStrength";
 import { Toggle } from "@/components/ui/Toggle";
-import { GithubButton } from "@/features/auth/parts";
+import { GithubButton, GoogleButton } from "@/features/auth/parts";
 import { PhoneVerifyDialog } from "@/features/auth/PhoneVerifyDialog";
 import { PreferencesMatrix } from "@/features/notifications/PreferencesMatrix";
 import { api, unwrap } from "@/lib/api/client";
@@ -168,6 +168,8 @@ function GithubTab() {
     onError: (e) => toast.error(userMessage(e)),
   });
   const gh = user?.github;
+  // Unlinking is allowed only if another way to sign in remains: a password or Google.
+  const canUnlink = !!user?.hasPassword || !!user?.google;
   return (
     <Section
       title="GitHub"
@@ -183,15 +185,15 @@ function GithubTab() {
           <Button
             size="sm"
             variant="ghost"
-            disabled={!user?.hasPassword}
+            disabled={!canUnlink}
             loading={unlink.isPending}
             onClick={() => unlink.mutate()}
           >
             Unlink GitHub
           </Button>
-          {!user?.hasPassword && (
+          {!canUnlink && (
             <p className="w-full text-sm text-mist">
-              Set a password first (Password tab), or you'd be locked out.
+              Set a password first (Password tab) or connect Google, or you'd be locked out.
             </p>
           )}
         </div>
@@ -199,6 +201,58 @@ function GithubTab() {
         <div className="max-w-xs">
           <GithubButton
             label="Connect GitHub"
+            options={{ link: true, next: window.location.pathname }}
+            onError={(m) => toast.error(m)}
+          />
+        </div>
+      )}
+    </Section>
+  );
+}
+
+function GoogleTab() {
+  const { user, refreshMe } = useAuth();
+  const unlink = useMutation({
+    mutationFn: () => unwrap(api.DELETE("/api/v1/auth/google")),
+    onSuccess: async () => {
+      await refreshMe();
+      toast("Google disconnected");
+    },
+    onError: (e) => toast.error(userMessage(e)),
+  });
+  const google = user?.google;
+  // Disconnecting is allowed only if another way to sign in remains: a password or GitHub.
+  const canUnlink = !!user?.hasPassword || !!user?.github;
+  return (
+    <Section
+      title="Google"
+      description="Sign in with your Google account instead of a password. It does not give us access to anything in your Google account."
+    >
+      {google ? (
+        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-line px-4 py-3">
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-medium">{google.email}</p>
+            <p className="text-sm text-mist">Connected</p>
+          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={!canUnlink}
+            loading={unlink.isPending}
+            onClick={() => unlink.mutate()}
+          >
+            Disconnect Google
+          </Button>
+          {!canUnlink && (
+            <p className="w-full text-sm text-mist">
+              Set a password first (Password tab) or connect GitHub, or you'd be locked out.
+            </p>
+          )}
+        </div>
+      ) : (
+        <div className="max-w-xs">
+          <GoogleButton
+            label="Connect Google"
             options={{ link: true, next: window.location.pathname }}
             onError={(m) => toast.error(m)}
           />
@@ -324,7 +378,7 @@ function PrivacyTab() {
           ) : (
             <p className="flex gap-2 text-sm text-mist">
               <ShieldAlert aria-hidden className="h-4 w-4 shrink-0 text-warn" /> Accounts without a password
-              must have signed in with GitHub in the last 10 minutes.
+              must have signed in (with GitHub or Google) in the last 10 minutes.
               {error && <span className="text-bad">{error}</span>}
             </p>
           )}
@@ -424,6 +478,7 @@ const TABS = [
   { value: "profile", label: "Profile", Component: ProfileTab },
   { value: "contact", label: "Contact", Component: ContactTab },
   { value: "github", label: "GitHub", Component: GithubTab, seekerOnly: true },
+  { value: "google", label: "Google", Component: GoogleTab },
   { value: "notifications", label: "Notifications", Component: PreferencesMatrix },
   { value: "privacy", label: "Privacy", Component: PrivacyTab },
   { value: "password", label: "Password", Component: PasswordTab },

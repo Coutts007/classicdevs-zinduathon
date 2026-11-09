@@ -16,7 +16,7 @@ import { homeFor } from "@/lib/auth/redirects";
 import { toE164 } from "@/lib/phone";
 import { cn } from "@/lib/utils";
 
-import { AuthCard, Divider, FormError, GithubButton } from "./parts";
+import { AuthCard, Divider, FormError, GithubButton, GoogleButton } from "./parts";
 import { registerSchema, type RegisterValues } from "./register-schema";
 
 type RoleChoice = "job_seeker" | "recruiter";
@@ -175,13 +175,20 @@ function RegisterForm({ role, onChangeRole }: { role: RoleChoice; onChangeRole: 
       <FormError message={error} />
       {!recruiter && (
         <>
-          <GithubButton
-            label="Sign up with GitHub"
-            options={{ role, acceptTerms: true, emailFeedback: true, smsFeedback: false }}
-            onError={setError}
-          />
+          <div className="space-y-3">
+            <GithubButton
+              label="Sign up with GitHub"
+              options={{ role, acceptTerms: true, emailFeedback: true, smsFeedback: false }}
+              onError={setError}
+            />
+            <GoogleButton
+              label="Sign up with Google"
+              options={{ role, acceptTerms: true, emailFeedback: true, smsFeedback: false }}
+              onError={setError}
+            />
+          </div>
           <p className="mt-2 text-center text-xs text-mist">
-            By continuing with GitHub you accept the{" "}
+            By continuing with GitHub or Google you accept the{" "}
             <Link to="/terms" className="underline">
               terms
             </Link>{" "}

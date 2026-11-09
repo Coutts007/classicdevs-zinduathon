@@ -141,6 +141,15 @@ GITHUB_OAUTH_REDIRECT_URI = env_str(
     "GITHUB_OAUTH_REDIRECT_URI", f"{FRONTEND_URL}/auth/github/callback"
 )
 GITHUB_OAUTH_SCOPES = "read:user user:email"
+
+# Google sign-in (OpenID Connect). Optional: without the id and secret the endpoints answer 503
+# `google_not_configured` and the rest of the app is unaffected. The redirect URI must match an
+# "Authorized redirect URI" of the OAuth client in Google Cloud Console exactly.
+GOOGLE_OAUTH_CLIENT_ID = env_str("GOOGLE_OAUTH_CLIENT_ID")
+GOOGLE_OAUTH_CLIENT_SECRET = env_str("GOOGLE_OAUTH_CLIENT_SECRET")
+GOOGLE_OAUTH_REDIRECT_URI = env_str(
+    "GOOGLE_OAUTH_REDIRECT_URI", f"{FRONTEND_URL}/auth/google/callback"
+)
 # Backend-hosted sign-in test page (no frontend yet). Never enabled in production settings.
 GITHUB_DEV_CALLBACK_ENABLED = False
 

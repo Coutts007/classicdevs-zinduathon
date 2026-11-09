@@ -6,7 +6,7 @@ from rest_framework import serializers
 from apps.companies.models import Company, RecruiterProfile
 
 from . import phone as phone_utils
-from .models import GithubAccount, JobSeekerProfile, Role, User
+from .models import GithubAccount, GoogleAccount, JobSeekerProfile, Role, User
 
 
 def normalise_phone_field(value: str | None, *, user: User | None = None) -> str | None:
@@ -49,6 +49,12 @@ class GithubAccountSerializer(serializers.ModelSerializer):
         fields = ("login", "avatar_url", "connected_at")
 
 
+class GoogleAccountSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GoogleAccount
+        fields = ("email", "connected_at")
+
+
 class JobSeekerProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = JobSeekerProfile
@@ -71,6 +77,7 @@ class MeSerializer(serializers.ModelSerializer):
     phone_verified = serializers.BooleanField(source="is_phone_verified", read_only=True)
     has_password = serializers.SerializerMethodField()
     github = serializers.SerializerMethodField()
+    google = serializers.SerializerMethodField()
     job_seeker_profile = serializers.SerializerMethodField()
     recruiter_profile = serializers.SerializerMethodField()
 
@@ -87,6 +94,7 @@ class MeSerializer(serializers.ModelSerializer):
             "has_password",
             "date_joined",
             "github",
+            "google",
             "job_seeker_profile",
             "recruiter_profile",
         )
@@ -102,6 +110,10 @@ class MeSerializer(serializers.ModelSerializer):
     def get_github(self, user):
         return self._related(user, "github_account", GithubAccountSerializer)
 
+    @extend_schema_field(GoogleAccountSerializer(allow_null=True))
+    def get_google(self, user):
+        return self._related(user, "google_account", GoogleAccountSerializer)
+
     @extend_schema_field(JobSeekerProfileSerializer(allow_null=True))
     def get_job_seeker_profile(self, user):
         return self._related(user, "job_seeker_profile", JobSeekerProfileSerializer)
@@ -112,7 +124,7 @@ class MeSerializer(serializers.ModelSerializer):
 
 
 class AuthResponseSerializer(serializers.Serializer):
-    """Same shape from register, login and the GitHub callback."""
+    """Same shape from register, login and the GitHub and Google callbacks."""
 
     access = serializers.CharField()
     refresh = serializers.CharField()
@@ -205,7 +217,7 @@ class PasswordChangeSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         user = self.context["request"].user
-        # GitHub-only accounts have no password yet; they may set one without a current password.
+        # GitHub/Google-only accounts have no password yet; they may set one without a current one.
         if user.has_usable_password() and not user.check_password(
             attrs.get("current_password", "")
         ):
@@ -243,6 +255,16 @@ class GithubAuthorizeResponseSerializer(serializers.Serializer):
 
 
 class GithubCallbackSerializer(serializers.Serializer):
+    code = serializers.CharField()
+    state = serializers.CharField()
+
+
+class GoogleAuthorizeResponseSerializer(serializers.Serializer):
+    authorize_url = serializers.URLField()
+    state = serializers.CharField()
+
+
+class GoogleCallbackSerializer(serializers.Serializer):
     code = serializers.CharField()
     state = serializers.CharField()
 

@@ -1,0 +1,12 @@
+Hi {{ user.full_name|default:"there" }},
+
+{% if created %}You just created your SkillProof account with {{ provider }} ({{ handle }}).{% else %}You just signed in to SkillProof with {{ provider }} ({{ handle }}).{% endif %}
+
+When: {{ when }}
+
+If this was you, there is nothing to do.
+
+If it wasn't you, secure your account: reset your password, and disconnect {{ provider }} from your account settings:
+{{ settings_link }}
+
+SkillProof

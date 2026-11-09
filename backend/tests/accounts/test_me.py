@@ -23,6 +23,7 @@ def test_job_seeker_me(auth_client, job_seeker):
         "hasPassword",
         "dateJoined",
         "github",
+        "google",
         "jobSeekerProfile",
         "recruiterProfile",
     }

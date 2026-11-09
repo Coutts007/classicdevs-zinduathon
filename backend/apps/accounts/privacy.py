@@ -72,6 +72,8 @@ def export(user: User) -> dict:
             "connectedAt": _iso(account.connected_at),
             "scopes": account.token_scopes,
         }
+    if google := getattr(user, "google_account", None):
+        data["google"] = {"email": google.email, "connectedAt": _iso(google.connected_at)}
     if profile := getattr(user, "job_seeker_profile", None):
         data["jobSeekerProfile"] = {
             "headline": profile.headline,
@@ -136,7 +138,7 @@ def export(user: User) -> dict:
 
 
 def can_delete_without_password(user: User) -> bool:
-    """GitHub-only accounts confirm by having signed in within the last 10 minutes."""
+    """Password-less accounts (GitHub or Google only) confirm by a recent sign-in."""
     return (
         not user.has_usable_password()
         and user.last_login is not None

@@ -52,6 +52,7 @@ const routes: RouteObject[] = [
       { path: "reset-password", lazy: async () => ({ Component: (await auth()).ResetPasswordPage }) },
       { path: "verify-email", lazy: async () => ({ Component: (await auth()).VerifyEmailPage }) },
       { path: "auth/github/callback", lazy: async () => ({ Component: (await auth()).GithubCallbackPage }) },
+      { path: "auth/google/callback", lazy: async () => ({ Component: (await auth()).GoogleCallbackPage }) },
       {
         path: "recruiter/pending",
         element: <RequireAuth roles={["recruiter"]} allowUnapproved />,

@@ -22,6 +22,7 @@ export const SEEKER = [
   "/app/settings",
   "/app/settings?tab=contact",
   "/app/settings?tab=github",
+  "/app/settings?tab=google",
   "/app/settings?tab=notifications",
   "/app/settings?tab=privacy",
   "/app/settings?tab=password",

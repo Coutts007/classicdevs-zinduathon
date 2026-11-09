@@ -11,7 +11,7 @@ import { ApiError, userMessage } from "@/lib/api/errors";
 import { useAuth } from "@/lib/auth/auth-context";
 import { homeFor, safeNext } from "@/lib/auth/redirects";
 
-import { AuthCard, Divider, FormError, GithubButton } from "./parts";
+import { AuthCard, Divider, FormError, GithubButton, GoogleButton } from "./parts";
 
 const schema = z.object({
   email: z.string().trim().email("Enter a valid email address."),
@@ -91,7 +91,10 @@ export function LoginPage() {
         </Button>
       </form>
       <Divider />
-      <GithubButton options={{ next }} onError={setError} />
+      <div className="space-y-3">
+        <GithubButton options={{ next }} onError={setError} />
+        <GoogleButton options={{ next }} onError={setError} />
+      </div>
     </AuthCard>
   );
 }

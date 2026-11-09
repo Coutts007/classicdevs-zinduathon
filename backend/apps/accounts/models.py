@@ -127,6 +127,23 @@ class GithubAccount(TimeStampedModel):
         return decrypt(self.access_token_encrypted)
 
 
+class GoogleAccount(TimeStampedModel):
+    """A Google identity proven by sign-in. It only lets the person sign in: analysis still needs a
+    GitHub account. We keep Google's account id and the verified email, and no Google tokens."""
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="google_account")
+    google_sub = models.CharField(max_length=255, unique=True, help_text="Google's account id")
+    email = models.EmailField(max_length=254, help_text="Lowercase, verified by Google")
+    connected_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self) -> str:
+        return self.email
+
+    def save(self, *args, **kwargs):
+        self.email = (self.email or "").lower()
+        super().save(*args, **kwargs)
+
+
 class ConsentType(models.TextChoices):
     TERMS = "terms", "Terms of service"
     PRIVACY = "privacy", "Privacy policy"

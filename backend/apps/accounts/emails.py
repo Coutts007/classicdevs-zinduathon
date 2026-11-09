@@ -9,6 +9,7 @@ import logging
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
+from django.utils import timezone
 
 from . import tokens
 
@@ -38,3 +39,19 @@ def send_verification_email(user) -> bool:
 def send_password_reset_email(user) -> bool:
     link = f"{settings.FRONTEND_URL}/reset-password?token={tokens.make_reset_token(user)}"
     return _send("password_reset", user, {"link": link})
+
+
+def send_oauth_sign_in_email(user, provider: str, handle: str, *, created: bool = False) -> bool:
+    """Tell the owner of the address that someone signed in (or signed up) with GitHub or Google,
+    so an unexpected sign-in is noticed. `handle` is what the provider calls the account."""
+    return _send(
+        "oauth_sign_in",
+        user,
+        {
+            "provider": provider,
+            "handle": handle,
+            "created": created,
+            "when": timezone.now().strftime("%d %b %Y, %H:%M UTC"),
+            "settings_link": f"{settings.FRONTEND_URL}/app/settings",
+        },
+    )

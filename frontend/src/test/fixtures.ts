@@ -13,6 +13,7 @@ export function makeMe(overrides: Partial<Me> = {}): Me {
     hasPassword: true,
     dateJoined: "2026-11-07T10:00:00+03:00",
     github: null,
+    google: null,
     jobSeekerProfile: { headline: "", location: "", cardVisible: true, openToWork: true },
     recruiterProfile: null,
     ...overrides,

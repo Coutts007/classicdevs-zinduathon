@@ -23,6 +23,9 @@ FIELD_ENCRYPTION_KEY = "kY2ZpT0m2C7Qw3l3cX1H4b7mJ6eYw0b8n2nZbqk7x0A="  # test-on
 GITHUB_OAUTH_CLIENT_ID = "test-client-id"
 GITHUB_OAUTH_CLIENT_SECRET = "test-client-secret"  # noqa: S105
 GITHUB_OAUTH_REDIRECT_URI = "http://localhost:3000/auth/github/callback"
+GOOGLE_OAUTH_CLIENT_ID = "test-google-client-id"
+GOOGLE_OAUTH_CLIENT_SECRET = "test-google-client-secret"  # noqa: S105
+GOOGLE_OAUTH_REDIRECT_URI = "http://localhost:3000/auth/google/callback"
 SMS_DRY_RUN = True
 GITHUB_TOKEN = "test-github-token"  # noqa: S105
 ANALYSIS_FETCH_WORKERS = 1  # sequential: worker threads can't see the test transaction

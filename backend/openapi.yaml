@@ -1332,7 +1332,7 @@ paths:
   /api/v1/auth/github:
     delete:
       operationId: auth_github_destroy
-      description: Refused when the account has no password (you would be locked out).
+      description: Refused when it is the only way to sign in (no password, no Google).
       summary: Unlink GitHub
       tags:
       - Auth
@@ -1511,6 +1511,189 @@ paths:
                     message: …
                   summary: github_not_configured
           description: 'Dependency unavailable: `github_not_configured`'
+  /api/v1/auth/google:
+    delete:
+      operationId: auth_google_destroy
+      description: Refused when it is the only way to sign in (no password, no GitHub).
+      summary: Disconnect Google
+      tags:
+      - Auth
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                GoogleNotLinked:
+                  value:
+                    code: google_not_linked
+                    message: …
+                  summary: google_not_linked
+          description: 'Bad request: `google_not_linked`'
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                PasswordRequired:
+                  value:
+                    code: password_required
+                    message: …
+                  summary: password_required
+          description: 'Conflict: `password_required`'
+  /api/v1/auth/google/authorize:
+    get:
+      operationId: auth_google_authorize_retrieve
+      description: Returns the Google URL to send the browser to, with a signed `state`
+        (10 minutes). Keep `state` in sessionStorage and compare it on the callback
+        page.
+      summary: Start Google sign-in
+      parameters:
+      - in: query
+        name: acceptTerms
+        schema:
+          type: boolean
+        description: Required true for a first-time Google sign-up.
+      - in: query
+        name: emailFeedback
+        schema:
+          type: boolean
+      - in: query
+        name: link
+        schema:
+          type: boolean
+        description: True when linking Google to the signed-in account from settings.
+      - in: query
+        name: role
+        schema:
+          type: string
+          enum:
+          - job_seeker
+          - recruiter
+        description: For new sign-ups. Default job_seeker. Recruiters can only link.
+      - in: query
+        name: smsFeedback
+        schema:
+          type: boolean
+      tags:
+      - Auth
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoogleAuthorizeResponse'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                GoogleNotConfigured:
+                  value:
+                    code: google_not_configured
+                    message: …
+                  summary: google_not_configured
+          description: 'Dependency unavailable: `google_not_configured`'
+  /api/v1/auth/google/callback:
+    post:
+      operationId: auth_google_callback_create
+      description: Exchanges Google's `code`. Known Google account → signs in. Signed-in
+        caller → links Google to them. Matching verified email → links and signs in.
+        Otherwise creates a job seeker (requires `acceptTerms` at authorize time).
+        Stores no Google tokens. A Google-only job seeker must connect GitHub before
+        an analysis can run.
+      summary: Finish Google sign-in
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoogleCallbackRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GoogleCallbackRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GoogleCallbackRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GithubAuthResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                StateInvalid:
+                  value:
+                    code: state_invalid
+                    message: …
+                  summary: state_invalid
+                GoogleOauthFailed:
+                  value:
+                    code: google_oauth_failed
+                    message: …
+                  summary: google_oauth_failed
+                GoogleEmailUnverified:
+                  value:
+                    code: google_email_unverified
+                    message: …
+                  summary: google_email_unverified
+                TermsRequired:
+                  value:
+                    code: terms_required
+                    message: …
+                  summary: terms_required
+                RecruiterSignupRequiresEmail:
+                  value:
+                    code: recruiter_signup_requires_email
+                    message: …
+                  summary: recruiter_signup_requires_email
+          description: 'Bad request: `state_invalid`, `google_oauth_failed`, `google_email_unverified`,
+            `terms_required`, `recruiter_signup_requires_email`'
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                GoogleAlreadyLinked:
+                  value:
+                    code: google_already_linked
+                    message: …
+                  summary: google_already_linked
+          description: 'Conflict: `google_already_linked`'
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                GoogleNotConfigured:
+                  value:
+                    code: google_not_configured
+                    message: …
+                  summary: google_not_configured
+          description: 'Dependency unavailable: `google_not_configured`'
   /api/v1/auth/login:
     post:
       operationId: auth_login_create
@@ -3031,8 +3214,9 @@ paths:
       operationId: me_destroy
       description: Permanently deletes your account and personal data, and signs you
         out everywhere. Send your password; accounts without one must have signed
-        in with GitHub in the last 10 minutes. Feedback you sent as a recruiter stays
-        with its recipient, anonymised. Admin accounts are removed by another admin.
+        in (GitHub or Google) in the last 10 minutes. Feedback you sent as a recruiter
+        stays with its recipient, anonymised. Admin accounts are removed by another
+        admin.
       summary: Delete my account
       tags:
       - Profile
@@ -4010,7 +4194,7 @@ components:
       - createdAt
     AuthResponse:
       type: object
-      description: Same shape from register, login and the GitHub callback.
+      description: Same shape from register, login and the GitHub and Google callbacks.
       properties:
         access:
           type: string
@@ -4680,7 +4864,7 @@ components:
       - login
     GithubAuthResponse:
       type: object
-      description: Same shape from register, login and the GitHub callback.
+      description: Same shape from register, login and the GitHub and Google callbacks.
       properties:
         access:
           type: string
@@ -4708,6 +4892,42 @@ components:
       - authorizeUrl
       - state
     GithubCallbackRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+        state:
+          type: string
+          minLength: 1
+      required:
+      - code
+      - state
+    GoogleAccount:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: Lowercase, verified by Google
+          maxLength: 254
+        connectedAt:
+          type: string
+          format: date-time
+      required:
+      - email
+    GoogleAuthorizeResponse:
+      type: object
+      properties:
+        authorizeUrl:
+          type: string
+          format: uri
+        state:
+          type: string
+      required:
+      - authorizeUrl
+      - state
+    GoogleCallbackRequest:
       type: object
       properties:
         code:
@@ -5009,6 +5229,11 @@ components:
           - $ref: '#/components/schemas/GithubAccount'
           nullable: true
           readOnly: true
+        google:
+          allOf:
+          - $ref: '#/components/schemas/GoogleAccount'
+          nullable: true
+          readOnly: true
         jobSeekerProfile:
           allOf:
           - $ref: '#/components/schemas/JobSeekerProfile'
@@ -5023,6 +5248,7 @@ components:
       - email
       - emailVerified
       - github
+      - google
       - hasPassword
       - id
       - jobSeekerProfile

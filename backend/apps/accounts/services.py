@@ -12,12 +12,14 @@ from django.utils import timezone
 
 from apps.core import audit
 
-from . import emails, sms, tokens
+from . import emails, google_oauth, sms, tokens
 from .errors import (
     CodeAttemptsExceeded,
     CodeInvalid,
     GithubAlreadyLinked,
     GithubNotLinked,
+    GoogleAlreadyLinked,
+    GoogleNotLinked,
     PasswordRequired,
     PhoneMissing,
     RecruiterSignupNeedsEmail,
@@ -28,6 +30,7 @@ from .models import (
     ConsentRecord,
     ConsentType,
     GithubAccount,
+    GoogleAccount,
     JobSeekerProfile,
     Role,
     User,
@@ -224,6 +227,25 @@ def _link(user: User, identity: GithubIdentity) -> GithubAccount:
         raise GithubAlreadyLinked() from exc
 
 
+def _notify_oauth_sign_in(user: User, provider: str, handle: str, *, how: str, created: bool):
+    """Email a job seeker when GitHub or Google signs in to their account. Linking from settings is
+    not a sign-in, so it stays quiet. Sent after the commit; a mail outage never blocks sign-in."""
+    if how == "linked_signed_in" or user.role != Role.JOB_SEEKER or not user.is_email_verified:
+        return
+    transaction.on_commit(
+        lambda: emails.send_oauth_sign_in_email(user, provider, handle, created=created)
+    )
+
+
+def _other_sign_in_method(user: User, *, without: str) -> bool:
+    """Would the account still be able to sign in if `without` ("github" or "google") went away?"""
+    return (
+        user.has_usable_password()
+        or (without != "github" and hasattr(user, "github_account"))
+        or (without != "google" and hasattr(user, "google_account"))
+    )
+
+
 @transaction.atomic
 def github_sign_in(
     identity: GithubIdentity, state: OAuthState, *, current_user=None, request=None
@@ -297,6 +319,7 @@ def github_sign_in(
         request=request,
         metadata={"via": "github", "how": how},
     )
+    _notify_oauth_sign_in(user, "GitHub", f"@{identity.login}", how=how, created=created)
     return user, created
 
 
@@ -305,7 +328,111 @@ def unlink_github(user: User, request=None) -> None:
     account = getattr(user, "github_account", None)
     if account is None:
         raise GithubNotLinked()
-    if not user.has_usable_password():
+    if not _other_sign_in_method(user, without="github"):
         raise PasswordRequired()
     account.delete()
     audit.record("auth.github_unlinked", actor=user, target=user, request=request)
+
+
+# --- Google ---
+
+
+def _link_google(user: User, identity: google_oauth.GoogleIdentity) -> GoogleAccount:
+    existing = getattr(user, "google_account", None)
+    if existing is not None and existing.google_sub != identity.sub:
+        raise GoogleAlreadyLinked("Disconnect your current Google account first.")
+    account = existing or GoogleAccount(user=user, google_sub=identity.sub)
+    account.email = identity.email or account.email
+    try:
+        account.save()
+    except IntegrityError as exc:  # pragma: no cover - race with another link of the same sub
+        raise GoogleAlreadyLinked() from exc
+    return account
+
+
+@transaction.atomic
+def google_sign_in(
+    identity: google_oauth.GoogleIdentity, state: OAuthState, *, current_user=None, request=None
+) -> tuple[User, bool]:
+    """Resolve a Google identity to a user. Returns (user, created).
+
+    Same order as GitHub: known Google id → sign in; signed-in linking → link; verified email match
+    → link + sign in; otherwise create a job seeker. A Google-only job seeker can sign in but must
+    connect GitHub before an analysis can run, exactly like an email-and-password job seeker.
+    """
+    signed_in = current_user if current_user and current_user.is_authenticated else None
+    account = GoogleAccount.objects.select_related("user").filter(google_sub=identity.sub).first()
+
+    if account is not None:
+        if signed_in and account.user_id != signed_in.pk:
+            raise GoogleAlreadyLinked()
+        user, created, how = account.user, False, "google_sub"
+    elif signed_in:
+        _link_google(signed_in, identity)
+        user, created, how = signed_in, False, "linked_signed_in"
+        audit.record("auth.google_linked", actor=user, target=user, request=request)
+    else:
+        email = google_oauth.require_email(identity)
+        user = User.objects.filter(email__iexact=email).first()
+        if user is not None:
+            if not user.is_email_verified:
+                # Someone may have pre-registered this address with their own password. Google
+                # proves the real owner, so take the account back: drop that password.
+                user.set_unusable_password()
+                tokens.blacklist_all(user)
+                user.email_verified_at = timezone.now()
+                user.save(update_fields=["password", "email_verified_at", "updated_at"])
+            _link_google(user, identity)
+            created, how = False, "linked_by_email"
+            audit.record("auth.google_linked", actor=user, target=user, request=request)
+        else:
+            if state.role != Role.JOB_SEEKER:
+                raise RecruiterSignupNeedsEmail(
+                    "Recruiters register with email first, then link Google from settings."
+                )
+            if not state.consents.get("terms"):
+                raise TermsRequired()
+            user = User.objects.create_user(
+                email,
+                None,
+                role=Role.JOB_SEEKER,
+                full_name=identity.name or "",
+                email_verified_at=timezone.now(),  # Google verified it
+            )
+            JobSeekerProfile.objects.create(user=user)
+            _link_google(user, identity)
+            record_consents(user, state.consents, request)
+            _default_preferences(user)
+            created, how = True, "created"
+            audit.record(
+                "auth.register",
+                actor=user,
+                target=user,
+                request=request,
+                metadata={"via": "google"},
+            )
+
+    if not user.is_active:
+        from .errors import InvalidCredentials
+
+        raise InvalidCredentials("This account is suspended.")
+    audit.record(
+        "auth.sign_in",
+        actor=user,
+        target=user,
+        request=request,
+        metadata={"via": "google", "how": how},
+    )
+    _notify_oauth_sign_in(user, "Google", identity.email or user.email, how=how, created=created)
+    return user, created
+
+
+@transaction.atomic
+def unlink_google(user: User, request=None) -> None:
+    account = getattr(user, "google_account", None)
+    if account is None:
+        raise GoogleNotLinked()
+    if not _other_sign_in_method(user, without="google"):
+        raise PasswordRequired()
+    account.delete()
+    audit.record("auth.google_unlinked", actor=user, target=user, request=request)
