@@ -26,7 +26,11 @@ RUN npm run build
 
 # Stage 2: static files on nginx, as a non-root user.
 FROM nginxinc/nginx-unprivileged:1.27-alpine AS prod
-COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
+# nginx.conf is a template: ${PORT} is filled in at start (default 8080).
+ENV PORT=8080
+COPY frontend/nginx.conf /etc/nginx/templates/default.conf.template
 COPY frontend/security-headers.conf /etc/nginx/snippets/security-headers.conf
-COPY --from=build /app/frontend/dist /usr/share/nginx/html
+COPY --from=build --chown=101:101 /app/frontend/dist /usr/share/nginx/html
+# API_BASE_URL, APP_URL, DJANGO_ADMIN_URL, API_DOCS_URL at runtime → /config.js
+COPY --chmod=755 frontend/docker/40-runtime-config.sh /docker-entrypoint.d/40-runtime-config.sh
 EXPOSE 8080

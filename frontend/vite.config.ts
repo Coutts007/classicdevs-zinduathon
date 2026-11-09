@@ -15,14 +15,12 @@ export default defineConfig({
     rollupOptions: {
       output: {
         // The 3D planet is large; keep it in its own chunk so app screens never download it.
-        manualChunks: {
-          three: [
-            "three",
-            "@react-three/fiber",
-            "@react-three/drei",
-            "@react-three/postprocessing",
-            "postprocessing",
-          ],
+        // Only the 3D packages themselves. The object form also pulled shared dependencies
+        // (React, its scheduler) into this chunk, so every page preloaded 290 KB of three.js.
+        manualChunks(id) {
+          if (/[\\/]node_modules[\\/](three|@react-three|postprocessing)[\\/]/.test(id)) return "three";
+          // React must live outside it, or Rollup hoists it into "three" and the entry imports it.
+          if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return "react";
         },
       },
     },

@@ -58,7 +58,7 @@ function MyMatch({ job }: { job: Job }) {
       )}
       <p className="text-xs text-mist">
         Based on your latest analysis.{" "}
-        <Link to="/app/analyse" className="text-flare-hot hover:underline">
+        <Link to="/app/analyse" className="text-flare-hot underline underline-offset-2">
           Re-run it
         </Link>{" "}
         after you push new work.

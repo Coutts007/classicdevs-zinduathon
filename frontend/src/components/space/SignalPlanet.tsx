@@ -13,6 +13,12 @@ export function StaticPlanet({ className }: { className?: string }) {
       <div className="absolute left-1/2 top-[58%] h-[min(130vw,1100px)] w-[min(130vw,1100px)] -translate-x-1/2 rounded-full bg-flare/25 blur-[90px]" />
       <img
         src="/images/planet-static.webp"
+        srcSet="/images/planet-static-800.webp 800w, /images/planet-static-1200.webp 1200w, /images/planet-static.webp 1600w"
+        sizes="min(150vw, 1500px)"
+        // The landing page's largest paint: fetch it first. Lower-case attribute: React 18 doesn't
+        // know the camel-case prop yet and would warn.
+        {...{ fetchpriority: "high" }}
+        decoding="async"
         alt=""
         className="absolute bottom-0 left-1/2 w-[min(150vw,1500px)] max-w-none -translate-x-1/2 select-none"
         draggable={false}
@@ -35,6 +41,21 @@ type Props = {
 export function SignalPlanet({ className, intro = false, onIntroDone }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const [use3D] = useState(canRender3D);
+  // The static planet paints first (it is the LCP image); the 3D scene loads when the browser is
+  // idle, so the 1 MB of three.js never competes with first paint.
+  const [idle, setIdle] = useState(false);
+  useEffect(() => {
+    if (!use3D) return;
+    const w = window as Window & {
+      requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number;
+    };
+    if (w.requestIdleCallback) {
+      const id = w.requestIdleCallback(() => setIdle(true), { timeout: 2000 });
+      return () => window.cancelIdleCallback?.(id);
+    }
+    const t = setTimeout(() => setIdle(true), 300);
+    return () => clearTimeout(t);
+  }, [use3D]);
   const [visible, setVisible] = useState(true);
   const [tabVisible, setTabVisible] = useState(() => document.visibilityState !== "hidden");
 
@@ -59,7 +80,7 @@ export function SignalPlanet({ className, intro = false, onIntroDone }: Props) {
 
   return (
     <div ref={host} aria-hidden className={cn("pointer-events-none absolute inset-0", className)}>
-      {use3D ? (
+      {use3D && idle ? (
         <Suspense fallback={<StaticPlanet />}>
           <Scene intro={intro} onIntroDone={onIntroDone} paused={!visible || !tabVisible} />
         </Suspense>
