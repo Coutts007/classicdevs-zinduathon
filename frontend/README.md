@@ -21,6 +21,13 @@ confirms the connection.
 Everything in Docker, from the repository root: `docker compose up` (frontend on :5173, API on
 :8000, Mailpit on :8025); add `--profile prod` for the nginx build on :8080.
 
+The production image reads its settings at start-up, so one image fits any backend:
+`API_BASE_URL`, `APP_URL`, `DJANGO_ADMIN_URL`, `API_DOCS_URL` (written to `/config.js`) and `PORT`
+(default 8080). The same script writes the `Content-Security-Policy` header: `connect-src` allows
+the origin of `API_BASE_URL` (else the URL the image was built with); `CSP_CONNECT_SRC` adds more
+origins, space-separated. Scripts, fonts and images are same-origin only (`data:`/`blob:` for
+images; inline styles are allowed because the UI sets style attributes).
+
 ## Scripts
 
 | Script                                  | Does                                                                                   |
