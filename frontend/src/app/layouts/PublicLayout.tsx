@@ -3,8 +3,6 @@ import { useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 
 import { Wordmark } from "@/components/brand/Logo";
-import { HealthDot } from "@/components/HealthDot";
-import { env } from "@/lib/env";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
@@ -110,16 +108,12 @@ export function PublicLayout() {
           <Wordmark className="text-ink" />
           <p>Built for Zinduathon 3.0 · Nairobi</p>
           <div className="flex items-center gap-4">
-            <a href={env.apiDocsUrl} className="hover:text-ink">
-              API docs
-            </a>
             <Link to="/terms" className="hover:text-ink">
               Terms
             </Link>
             <Link to="/privacy" className="hover:text-ink">
               Privacy
             </Link>
-            {env.isDev && <HealthDot />}
           </div>
         </div>
       </footer>
