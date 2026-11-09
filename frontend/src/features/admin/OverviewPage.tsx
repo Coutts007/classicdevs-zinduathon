@@ -5,10 +5,14 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 
 import { GlassPanel } from "@/components/glass/Glass";
 import { Button } from "@/components/ui/Button";
-import { ErrorState, SkeletonBlock, StatTile } from "@/components/ui/States";
+import { StatusChip } from "@/components/ui/Badge";
+import { EmptyState, ErrorState, SkeletonBlock, StatTile } from "@/components/ui/States";
 import { api, unwrap } from "@/lib/api/client";
 import { userMessage } from "@/lib/api/errors";
 import { env } from "@/lib/env";
+import { ago, fmtDate } from "@/lib/format";
+
+import { ADMIN_LIVE } from "./live";
 
 const pct = (rate: number | null | undefined) => (rate == null ? "–" : `${Math.round(rate * 100)}%`);
 const tooltipStyle = {
@@ -18,11 +22,74 @@ const tooltipStyle = {
   color: "#f4f4f5",
 };
 
+const LATEST = 5;
+
+/** The newest recruiters waiting for a decision, so a new sign-up is visible without opening the queue. */
+function LatestPendingRecruiters() {
+  const latest = useQuery({
+    queryKey: ["admin", "recruiters", "pending", "latest"],
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/v1/admin/recruiters", { params: { query: { status: "pending", ordering: "newest" } } }),
+      ),
+    ...ADMIN_LIVE,
+  });
+  return (
+    <GlassPanel as="section" className="p-5" aria-labelledby="latest-recruiters">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h2 id="latest-recruiters" className="text-lg">
+            Waiting for approval
+          </h2>
+          <p className="text-sm text-mist">Newest sign-ups first. Updates every 15 seconds.</p>
+        </div>
+        <Link to="/admin/recruiters" className="text-sm text-flare-hot hover:underline">
+          Open the queue{latest.data ? ` (${latest.data.count})` : ""}
+        </Link>
+      </div>
+      <div className="mt-4">
+        {latest.isPending ? (
+          <SkeletonBlock lines={3} label="Loading recruiters" />
+        ) : latest.isError ? (
+          <ErrorState description={userMessage(latest.error)} onRetry={() => latest.refetch()} />
+        ) : latest.data.results.length === 0 ? (
+          <EmptyState title="No one is waiting" description="New recruiter sign-ups appear here." />
+        ) : (
+          <ul className="divide-y divide-white/10">
+            {latest.data.results.slice(0, LATEST).map((r) => (
+              <li key={r.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{r.fullName || r.email}</p>
+                  <p className="truncate text-sm text-mist">
+                    {r.company}
+                    {r.jobTitle ? ` · ${r.jobTitle}` : ""}
+                  </p>
+                </div>
+                <StatusChip tone={r.emailVerified ? "ok" : "warn"}>
+                  {r.emailVerified ? "Email verified" : "Email not verified"}
+                </StatusChip>
+                <span className="text-sm text-mist" title={fmtDate(r.createdAt)}>
+                  {ago(r.createdAt)}
+                </span>
+                <Link to="/admin/recruiters">
+                  <Button size="sm" variant="glass">
+                    Review
+                  </Button>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </GlassPanel>
+  );
+}
+
 export function AdminOverviewPage() {
   const stats = useQuery({
     queryKey: ["admin", "stats"],
     queryFn: () => unwrap(api.GET("/api/v1/admin/stats")),
-    refetchInterval: 60_000,
+    ...ADMIN_LIVE,
   });
   if (stats.isPending)
     return (
@@ -106,6 +173,7 @@ export function AdminOverviewPage() {
           hint={`${s.deliveryRates.sms?.total ?? 0} sent`}
         />
       </div>
+      <LatestPendingRecruiters />
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <GlassPanel className="p-5">
           <h2 className="text-lg">Analyses per day</h2>

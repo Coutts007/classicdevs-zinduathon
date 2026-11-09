@@ -1,0 +1,10 @@
+{% autoescape off %}Hi {{ user.full_name|default:"there" }},
+
+{{ recruiter_name|default:"A recruiter" }}{% if job_title %} ({{ job_title }}){% endif %} from {{ company }} verified their email and is waiting for approval.
+
+Until you decide, they can sign in but cannot search candidates or contact anyone.
+
+{% if link %}Review: {{ link }}
+
+{% endif %}--
+SkillProof. Change your notification settings in your account.{% endautoescape %}

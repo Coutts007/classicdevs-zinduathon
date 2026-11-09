@@ -60,6 +60,24 @@ def on_status_changed(profile: RecruiterProfile) -> None:
         )
 
 
+def notify_admins_recruiter_waiting(profile: RecruiterProfile) -> int:
+    """Tell every active admin that a recruiter has verified their email and can now be approved.
+    Returns how many admins were notified. Called once, when the email gets verified."""
+    from apps.accounts.models import Role, User
+    from apps.notifications.models import Kind
+    from apps.notifications.services import notify
+
+    context = {
+        "recruiter_name": profile.user.full_name or profile.user.email,
+        "company": profile.company.name,
+        "job_title": profile.job_title,
+    }
+    admins = User.objects.filter(role=Role.ADMIN, is_active=True)
+    for admin in admins:
+        notify(admin, Kind.RECRUITER_PENDING, context, link_path="/admin/recruiters")
+    return len(admins)
+
+
 def approve(profile, *, reviewer, note="", request=None):
     return set_status(
         profile, ApprovalStatus.APPROVED, reviewer=reviewer, note=note, request=request

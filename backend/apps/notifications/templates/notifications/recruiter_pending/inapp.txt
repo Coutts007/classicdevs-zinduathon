@@ -1,0 +1,1 @@
+{% autoescape off %}{{ recruiter_name|default:"A recruiter" }}{% if job_title %} ({{ job_title }}){% endif %} from {{ company }} verified their email and is waiting for approval.{% endautoescape %}

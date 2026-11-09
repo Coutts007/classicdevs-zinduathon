@@ -18,6 +18,7 @@ class Kind(models.TextChoices):
     RECRUITER_REJECTED = "recruiter_rejected", "Recruiter rejected"
     SHORTLISTED = "shortlisted", "Shortlisted"
     PROFILE_VIEWED_DIGEST = "profile_viewed_digest", "Weekly profile views"
+    RECRUITER_PENDING = "recruiter_pending", "Recruiter awaiting approval"
 
 
 class Channel(models.TextChoices):

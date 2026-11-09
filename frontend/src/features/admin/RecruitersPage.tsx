@@ -13,6 +13,7 @@ import { userMessage } from "@/lib/api/errors";
 import type { RecruiterQueue } from "@/lib/api/types";
 import { ago, fmtDate } from "@/lib/format";
 
+import { ADMIN_LIVE } from "./live";
 import { ListPanel } from "./parts";
 import { useUrlState } from "./url-state";
 
@@ -110,6 +111,7 @@ export function RecruitersPage() {
     queryKey: ["admin", "recruiters", status, page],
     queryFn: () => unwrap(api.GET("/api/v1/admin/recruiters", { params: { query: { status, page } } })),
     placeholderData: keepPreviousData,
+    ...ADMIN_LIVE,
   });
   const [review, setReview] = useState<{ item: RecruiterQueue; action: "approve" | "reject" } | null>(null);
   return (
