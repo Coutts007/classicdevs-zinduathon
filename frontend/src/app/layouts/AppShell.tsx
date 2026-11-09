@@ -1,4 +1,5 @@
 import {
+  BadgeCheck,
   Bell,
   Briefcase,
   FileBarChart2,
@@ -6,9 +7,12 @@ import {
   LayoutDashboard,
   LineChart,
   Settings,
+  ShieldAlert,
   KanbanSquare,
+  ScrollText,
   Send,
   Sparkles,
+  Tags,
   Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -46,7 +50,17 @@ const NAV: Record<Role, { to: string; label: string; short?: string; icon: typeo
     { to: "/recruiter/notifications", label: "Notifications", icon: Bell },
     { to: "/recruiter/settings", label: "Settings", icon: Settings },
   ],
-  admin: [{ to: "/admin", label: "Overview", icon: LayoutDashboard }],
+  admin: [
+    { to: "/admin", label: "Overview", icon: LayoutDashboard },
+    { to: "/admin/recruiters", label: "Recruiters", icon: BadgeCheck },
+    { to: "/admin/users", label: "Users", icon: Users },
+    { to: "/admin/analyses", label: "Analyses", icon: Sparkles },
+    { to: "/admin/deliveries", label: "Deliveries", icon: Send },
+    { to: "/admin/moderation", label: "Moderation", icon: ShieldAlert },
+    { to: "/admin/skills", label: "Skills", icon: Tags },
+    { to: "/admin/audit-log", label: "Audit log", short: "Audit", icon: ScrollText },
+    { to: "/admin/settings", label: "Settings", icon: Settings },
+  ],
 };
 
 /**
@@ -72,7 +86,11 @@ export function AppShell({ area }: { area: Role }) {
     }
   }, [location, navigate]);
   const settingsPath =
-    area === "job_seeker" ? "/app/settings" : area === "recruiter" ? "/recruiter/settings" : "/admin";
+    area === "job_seeker"
+      ? "/app/settings"
+      : area === "recruiter"
+        ? "/recruiter/settings"
+        : "/admin/settings";
   const notificationsPath =
     area === "admin"
       ? "/admin/notifications"

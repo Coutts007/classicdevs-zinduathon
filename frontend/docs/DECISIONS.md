@@ -165,3 +165,25 @@ visitor never fetches page code. Public and auth routes keep route-level `lazy`.
   SMTP greeting, which stalled every email, and so every sign-up, by ~10 s.
 - Dev settings default `CONN_MAX_AGE` to 0. `runserver` uses a thread per request, and persistent
   connections outlived their threads until Postgres refused new clients after a long e2e session.
+
+## F-022 Admin area (Phase 6, small backend changes)
+
+- **Typed stats and deliveries.** `Stats.analysesPerDay` and `deliveryRates` were untyped dicts;
+  they now have serializers (`AnalysesPerDay`, `DeliveryRate`). Dict keys from the API are
+  camelised (`usersByRole.jobSeeker`), which the overview reads.
+- **Delivery detail.** The spec asks for the recipient masked, the body and the provider response.
+  `Delivery` now returns `recipient` masked server-side (`a***a@example.com`, `+2547******78`),
+  plus `title`, `body` (the notification text) and `providerResponse` (JSON). Admins never receive
+  full recipients in list responses.
+- **Skills response type.** `aliases` was write-only in the schema although responses include it;
+  responses now use `AdminSkillOut`.
+- **Moderation** (`/admin/moderation`) uses the held-feedback endpoints that exist in the API but
+  weren't listed in the spec's admin screens; the overview links to it when anything is held.
+- **Recruiter queue** is oldest first (fair review order) with no search. Approve/reject buttons
+  are labelled with name and email, so two people with the same name stay distinguishable.
+  Approval needs a verified email (backend rule); the queue shows that status.
+- **DataTable** sorts within the current page (the API pages and orders the data); filters and page
+  numbers live in the URL. Role changes and suspensions go through a confirm dialog; the backend
+  refuses changes to your own account.
+- Charts render without animation: Recharts' entry animation restarted whenever the responsive
+  container re-measured, so bars could be missing in captures and on slow devices.

@@ -29,6 +29,7 @@ from apps.recruiting.services import feedback as feedback_service
 from apps.skills.models import DependencyMapping, Skill, SkillAlias
 
 from .serializers import (
+    AdminSkillOutSerializer,
     AdminSkillSerializer,
     AdminUserSerializer,
     AdminUserUpdateSerializer,
@@ -387,7 +388,7 @@ class SkillAdminListView(AdminView):
         tags=["Admin"],
         summary="Skill catalogue (admin)",
         parameters=[OpenApiParameter("page", int)],
-        responses={200: paginated(AdminSkillSerializer)},
+        responses={200: paginated(AdminSkillOutSerializer)},
     )
     def get(self, request):
         return self.paginate(
@@ -401,7 +402,7 @@ class SkillAdminListView(AdminView):
         summary="Add a skill",
         description="Takes effect on the next analysis: no deploy needed.",
         request=AdminSkillSerializer,
-        responses={201: AdminSkillSerializer, **errors((400, "validation_error"))},
+        responses={201: AdminSkillOutSerializer, **errors((400, "validation_error"))},
     )
     @transaction.atomic
     def post(self, request):
@@ -429,7 +430,7 @@ class SkillAdminDetailView(AdminView):
         description="`aliases`, when sent, replaces the list.",
         request=AdminSkillSerializer(partial=True),
         responses={
-            200: AdminSkillSerializer,
+            200: AdminSkillOutSerializer,
             **errors((400, "validation_error"), (404, "not_found")),
         },
     )

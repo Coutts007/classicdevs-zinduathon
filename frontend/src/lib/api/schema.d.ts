@@ -1105,10 +1105,12 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        AdminSkill: {
+        /** @description Response shape of AdminSkillSerializer (aliases are read back from the related rows). */
+        AdminSkillOut: {
             name: string;
-            slug?: string;
+            slug: string;
             category: components["schemas"]["SkillCategoryEnum"];
+            aliases: string[];
         };
         AdminSkillRequest: {
             name: string;
@@ -1135,6 +1137,12 @@ export interface components {
             lastLogin?: string | null;
             /** Format: date-time */
             dateJoined?: string;
+        };
+        AnalysesPerDay: {
+            /** Format: date */
+            date: string;
+            total: number;
+            completed: number;
         };
         AnalysisCreateRequest: {
             /** @description Admins only: the GitHub login to analyse. Job seekers always analyse their own. */
@@ -1358,11 +1366,15 @@ export interface components {
             user: string;
             channel: components["schemas"]["DeliveryChannelEnum"];
             provider: components["schemas"]["ProviderEnum"];
-            recipient?: string;
+            /** @description Masked */
+            readonly recipient: string;
             status?: components["schemas"]["DeliveryStatusEnum"];
             attempts?: number;
             lastError?: string;
             providerMessageId?: string;
+            readonly providerResponse: unknown;
+            readonly title: string;
+            readonly body: string;
             /** Format: date-time */
             sentAt?: string | null;
             /** Format: date-time */
@@ -1376,6 +1388,19 @@ export interface components {
          * @enum {string}
          */
         DeliveryChannelEnum: "email" | "sms";
+        DeliveryRate: {
+            /** @description Excludes skipped */
+            total: number;
+            /** @description Sent, delivered or dry run */
+            ok: number;
+            failed: number;
+            skipped: number;
+            /**
+             * Format: double
+             * @description ok / total, 0–1
+             */
+            rate: number | null;
+        };
         /**
          * @description * `queued` - Queued
          *     * `sent` - Sent
@@ -1655,13 +1680,13 @@ export interface components {
          * @enum {string}
          */
         NotificationKindEnum: "analysis_completed" | "analysis_failed" | "recruiter_feedback" | "recruiter_approved" | "recruiter_rejected" | "shortlisted" | "profile_viewed_digest";
-        PaginatedAdminSkillList: {
+        PaginatedAdminSkillOutList: {
             count: number;
             /** Format: uri */
             next: string | null;
             /** Format: uri */
             previous: string | null;
-            results: components["schemas"]["AdminSkill"][];
+            results: components["schemas"]["AdminSkillOut"][];
         };
         PaginatedAdminUserList: {
             count: number;
@@ -2057,18 +2082,15 @@ export interface components {
                 [key: string]: number;
             };
             pendingRecruiters: number;
-            analysesPerDay: {
-                [key: string]: unknown;
-            }[];
+            /** @description Last 14 days */
+            analysesPerDay: components["schemas"]["AnalysesPerDay"][];
             /** Format: double */
             averageSignalScore: number | null;
             feedbackSent: number;
             feedbackHeld: number;
             /** @description Per channel: total, ok (sent/delivered/dry run), failed, skipped, rate */
             deliveryRates: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
+                [key: string]: components["schemas"]["DeliveryRate"];
             };
         };
         SubScoreValue: {
@@ -2644,7 +2666,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedAdminSkillList"];
+                    "application/json": components["schemas"]["PaginatedAdminSkillOutList"];
                 };
             };
         };
@@ -2669,7 +2691,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AdminSkill"];
+                    "application/json": components["schemas"]["AdminSkillOut"];
                 };
             };
             /** @description Bad request: `validation_error` */
@@ -2705,7 +2727,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AdminSkill"];
+                    "application/json": components["schemas"]["AdminSkillOut"];
                 };
             };
             /** @description Bad request: `validation_error` */

@@ -140,6 +140,58 @@ const AUTHED: { name: string; path: string; account: string; ready?: (page: Page
         .waitFor(),
   },
   {
+    name: "admin-overview",
+    path: "/admin",
+    account: "admin@skillproof.demo",
+    ready: (p) => p.getByText("Email delivery rate").waitFor(),
+  },
+  {
+    name: "admin-recruiters",
+    path: "/admin/recruiters",
+    account: "admin@skillproof.demo",
+    ready: (p) => p.getByRole("table", { name: "Recruiters" }).waitFor(),
+  },
+  {
+    name: "admin-users",
+    path: "/admin/users",
+    account: "admin@skillproof.demo",
+    ready: (p) => p.getByRole("table", { name: "Users" }).waitFor(),
+  },
+  {
+    name: "admin-analyses",
+    path: "/admin/analyses",
+    account: "admin@skillproof.demo",
+    ready: (p) => p.getByRole("table", { name: "Analyses" }).waitFor(),
+  },
+  {
+    name: "admin-skills",
+    path: "/admin/skills",
+    account: "admin@skillproof.demo",
+    ready: (p) => p.getByRole("table", { name: "Skill catalogue" }).waitFor(),
+  },
+  {
+    name: "admin-deliveries",
+    path: "/admin/deliveries",
+    account: "admin@skillproof.demo",
+    ready: (p) => p.getByRole("table", { name: "Notification deliveries" }).waitFor(),
+  },
+  {
+    name: "admin-moderation",
+    path: "/admin/moderation",
+    account: "admin@skillproof.demo",
+    ready: (p) =>
+      p
+        .getByText(/Nothing held for review|Release/)
+        .first()
+        .waitFor(),
+  },
+  {
+    name: "admin-audit-log",
+    path: "/admin/audit-log",
+    account: "admin@skillproof.demo",
+    ready: (p) => p.getByRole("table", { name: "Audit log" }).waitFor(),
+  },
+  {
     name: "app-settings-notifications",
     path: "/app/settings?tab=notifications",
     account: "amina@jobseeker.demo",
