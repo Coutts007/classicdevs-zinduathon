@@ -104,5 +104,19 @@ make run
 ```
 
 Approve a recruiter in `/django-admin/` (or finish an analysis) and the email appears in Mailpit.
+
+To send real mail from a dev machine, point `EMAIL_HOST` at a real server in `.env`, for example
+Gmail (needs an app password, not the account password):
+
+```
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=true
+EMAIL_HOST_USER=you@gmail.com
+EMAIL_HOST_PASSWORD=<app password>
+```
+
+The dev settings only use `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` and `EMAIL_USE_TLS` when the host is
+not `localhost`/`127.0.0.1`/`mailpit`, so the Mailpit default keeps working with those values present.
 SMS deliveries show `dry_run` in the Delivery admin, which also has a "Retry selected failed
 deliveries" action.

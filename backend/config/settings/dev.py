@@ -1,4 +1,5 @@
-"""Local development: debug on, tasks run inline, email goes to Mailpit, SMS is dry-run."""
+"""Local development: debug on, tasks run inline, email goes to Mailpit (or a real SMTP server if
+EMAIL_HOST points at one), SMS is dry-run."""
 
 from .base import *
 from .env import env_bool, env_int, env_str
@@ -17,6 +18,14 @@ DATABASES["default"]["CONN_MAX_AGE"] = env_int("DB_CONN_MAX_AGE", 0)
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = env_str("EMAIL_HOST", "localhost")
 EMAIL_PORT = env_int("EMAIL_PORT", 1025)
+EMAIL_TIMEOUT = 10  # a dead SMTP server must not hang the request that triggered the email
+# Mailpit takes any mail without a login, and Django would fail trying to authenticate against it,
+# so credentials and TLS only apply when EMAIL_HOST is a real server (e.g. smtp.gmail.com:587 with
+# an app password). The default stays Mailpit: nothing leaves the machine unless you opt in.
+if EMAIL_HOST not in {"localhost", "127.0.0.1", "::1", "mailpit"}:
+    EMAIL_HOST_USER = env_str("EMAIL_HOST_USER")
+    EMAIL_HOST_PASSWORD = env_str("EMAIL_HOST_PASSWORD")
+    EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
 DEFAULT_FROM_EMAIL = env_str("DEFAULT_FROM_EMAIL", "SkillProof <no-reply@skillproof.app>")
 
 LOGGING["handlers"]["console"]["formatter"] = env_str("LOG_FORMAT", "text")
