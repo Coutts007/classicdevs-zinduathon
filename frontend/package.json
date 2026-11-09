@@ -12,6 +12,7 @@
     "predev": "npm run api:types",
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:netlify": "npm run build && node scripts/netlify-headers.mjs",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
     "lint": "eslint . && prettier --check .",
