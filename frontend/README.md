@@ -18,6 +18,8 @@ The backend must allow this origin: in `backend/.env` set
 it. Open **http://localhost:5173/dev/ui** (development builds only): the "Browser → API" panel
 confirms the connection.
 
+Hosting the frontend on **Netlify** (static, build-time settings): see `docs/NETLIFY.md`.
+
 Everything in Docker, from the repository root: `docker compose up` (frontend on :5173, API on
 :8000, Mailpit on :8025); add `--profile prod` for the nginx build on :8080.
 

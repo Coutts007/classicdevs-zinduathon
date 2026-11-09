@@ -1,0 +1,19 @@
+# Netlify build for the SkillProof frontend.
+#
+# In the Netlify site settings set "Base directory" to `frontend` (this file is read from there).
+# Redirects live in public/_redirects and headers are generated into dist/_headers by
+# scripts/netlify-headers.mjs, because Netlify can read those from the publish directory even when
+# a base directory is set. See docs/NETLIFY.md.
+#
+# Required environment variables (Site configuration -> Environment variables):
+#   VITE_API_BASE_URL       https://<api-host>/api/v1   (a production build fails without it)
+#   VITE_DJANGO_ADMIN_URL   https://<api-host>/django-admin/
+#   VITE_API_DOCS_URL       https://<api-host>/api/v1/docs/
+# VITE_APP_URL defaults to this site's own URL (Netlify's $URL) when it is not set.
+
+[build]
+  command = 'VITE_APP_URL="${VITE_APP_URL:-$URL}" npm run build:netlify'
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"

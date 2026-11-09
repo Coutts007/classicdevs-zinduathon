@@ -1,0 +1,145 @@
+# Render Blueprint for the SkillProof backend: API + Celery worker + scheduler in ONE web service
+# (ROLE=all in start.sh), a Postgres database and a Key Value (Redis) instance.
+#
+# How to use it
+#   1. Render Dashboard -> New -> Blueprint -> pick this repo, and set "Blueprint Path" to
+#      backend/render.yaml (Render looks for render.yaml at the repo root by default).
+#   2. Fill in the prompted values (everything marked `sync: false` below). Render asks only at the
+#      first creation; change them later under the service's Environment tab.
+#   3. After the first deploy: check https://<service>.onrender.com/api/v1/health, then create the
+#      admin user (see "After deploy" at the bottom).
+#
+# Paths are relative to the repo root because `rootDir` is not set (this file lives in backend/).
+# Plan names, the region and the Postgres version are choices you can change; Render validates
+# the file when you create the Blueprint and reports anything it does not accept.
+
+services:
+  # --- API + Celery worker + beat ---------------------------------------------------------------
+  - type: web
+    name: skillproof-api
+    runtime: docker
+    region: frankfurt # keep the web service, database and Key Value in ONE region (internal URLs)
+    # Free web services sleep after ~15 minutes idle and cannot send SMTP mail. Use a paid plan for
+    # anything people will use (0.5c-512mb is the smallest paid web plan, the size start.sh is
+    # tuned for).
+    plan: 0.5c-512mb
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/v1/health # no auth, exempt from the HTTPS redirect
+    autoDeployTrigger: commit
+    buildFilter:
+      paths:
+        - backend/**
+    envVars:
+      # -- Django core --
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.prod
+      - key: DJANGO_SECRET_KEY
+        generateValue: true # random, created once and kept across deploys
+      - key: DJANGO_ALLOWED_HOSTS
+        sync: false # this service's host, e.g. skillproof-api.onrender.com (+ custom domain, comma-separated)
+      - key: FRONTEND_URL
+        sync: false # https://<your-site>.netlify.app (used in email/SMS links and OAuth defaults)
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false # the same Netlify URL; without it the browser blocks every API call
+      - key: SECURE_SSL_REDIRECT
+        value: "true" # Render forwards X-Forwarded-Proto; set false only if you see a redirect loop
+
+      # -- Data (wired to the resources defined below) --
+      - key: DATABASE_URL
+        fromDatabase:
+          name: skillproof-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: skillproof-redis
+          property: connectionString
+
+      # -- Secrets you must back up: never change FIELD_ENCRYPTION_KEY after users link GitHub --
+      - key: FIELD_ENCRYPTION_KEY
+        sync: false # python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+
+      # -- GitHub (sign-in and analysis) --
+      - key: GITHUB_OAUTH_CLIENT_ID
+        sync: false # production GitHub OAuth App; callback https://<netlify-site>/auth/github/callback
+      - key: GITHUB_OAUTH_CLIENT_SECRET
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false # fine-grained token, public read; raises the analysis limit from 60 to 5000/hour
+
+      # -- Email --
+      # Render FREE web services block outbound SMTP (ports 25/465/587); a paid plan can send, and
+      # port 25 may stay blocked. Alternatively switch to an HTTP email API (see the project notes).
+      - key: EMAIL_HOST
+        sync: false # your SMTP provider's host
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_USE_TLS
+        value: "true"
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        sync: false # SkillProof <no-reply@your-verified-domain>
+
+      # -- Process layout (start.sh) --
+      - key: ROLE
+        value: all # web + Celery worker + beat in this one container
+      - key: WEB_CONCURRENCY
+        value: "2"
+      - key: CELERY_CONCURRENCY
+        value: "2"
+
+      # -- Behaviour --
+      - key: SMS_DRY_RUN
+        value: "true" # set "false" only once the Thrivewave settings below are filled in
+      - key: LLM_PROVIDER
+        value: anthropic
+      - key: LOG_LEVEL
+        value: INFO
+
+      # -- Optional: add in the dashboard (Environment tab) when you need them --
+      #   GOOGLE_OAUTH_CLIENT_ID / GOOGLE_OAUTH_CLIENT_SECRET  Google sign-in (callback
+      #                                                        https://<netlify-site>/auth/google/callback)
+      #   LLM_API_KEY / LLM_MODEL                              AI summaries (empty = template text)
+      #   THRIVEWAVE_BASE_URL, _API_KEY, _USERNAME, _SENDER_ID, _WEBHOOK_SECRET   SMS
+      #   SENTRY_DSN                                           error reporting
+      #   GITHUB_OAUTH_REDIRECT_URI / GOOGLE_OAUTH_REDIRECT_URI  only to override FRONTEND_URL + /auth/<provider>/callback
+      #   DJANGO_CSRF_TRUSTED_ORIGINS                          extra https origins for Django admin
+      # Do NOT set: DJANGO_DEBUG, CELERY_TASK_ALWAYS_EAGER, THROTTLE_SCALE, GITHUB_DEV_CALLBACK_ENABLED,
+      # ANALYSIS_CACHE_HOURS=8760 (that one is only for end-to-end test runs).
+
+  # --- Redis: Celery broker and cache ------------------------------------------------------------
+  - type: keyvalue
+    name: skillproof-redis
+    region: frankfurt
+    # `free` is 25 MB with no persistence: queued analyses are lost if it restarts. `256mb` is the
+    # smallest paid plan and keeps data on disk.
+    plan: free
+    maxmemoryPolicy: noeviction # a broker must never silently drop queued jobs
+    ipAllowList: [] # required by Render; empty = reachable only from services in this workspace
+
+databases:
+  # --- PostgreSQL ---------------------------------------------------------------------------------
+  - name: skillproof-db
+    databaseName: skillproof
+    user: skillproof
+    region: frankfurt
+    postgresMajorVersion: "16" # the version dev and CI run
+    # `free` expires 30 days after creation. 0.1c-256mb is the smallest paid plan.
+    plan: 0.1c-256mb
+    ipAllowList: [] # internal access only; add your IP here (CIDR) to run createsuperuser from your machine
+
+# After deploy
+#   * Migrations run automatically at container start (start.sh).
+#   * Create the first admin from your machine against the database's EXTERNAL connection string
+#     (temporarily add your IP to ipAllowList above or in the dashboard):
+#       cd backend
+#       export DJANGO_SETTINGS_MODULE=config.settings.prod DJANGO_SECRET_KEY=any-value \
+#              FIELD_ENCRYPTION_KEY=<the same key> DJANGO_ALLOWED_HOSTS=localhost \
+#              REDIS_URL=redis://localhost:6379/0 DATABASE_URL='<external connection string>'
+#       python manage.py createsuperuser
+#   * Then point the frontend (Netlify) at https://<service>.onrender.com/api/v1 and put the
+#     Netlify URL in FRONTEND_URL and CORS_ALLOWED_ORIGINS here.
