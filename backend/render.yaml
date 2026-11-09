@@ -115,9 +115,10 @@ services:
   - type: keyvalue
     name: skillproof-redis
     region: frankfurt
-    # `free` is 25 MB with no persistence: queued analyses are lost if it restarts. `256mb` is the
-    # smallest paid plan and keeps data on disk.
-    plan: free
+    # Paid on purpose. A workspace can have only ONE free Key Value instance ("cannot have more than
+    # 1 free tier Key Value instance"), and the free one is 25 MB with no persistence, so queued
+    # analyses would be lost on a restart. `256mb` is the smallest paid plan and keeps data on disk.
+    plan: 256mb
     maxmemoryPolicy: noeviction # a broker must never silently drop queued jobs
     ipAllowList: [] # required by Render; empty = reachable only from services in this workspace
 
