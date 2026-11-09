@@ -1,4 +1,11 @@
-import { forwardRef, useId, type InputHTMLAttributes, type ReactNode } from "react";
+import {
+  forwardRef,
+  useId,
+  type InputHTMLAttributes,
+  type ReactNode,
+  type SelectHTMLAttributes,
+  type TextareaHTMLAttributes,
+} from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -49,6 +56,51 @@ export const Input = forwardRef<
         invalid && "border-bad/70 focus:border-bad focus:ring-bad/30",
         className,
       )}
+      {...rest}
+    />
+  );
+});
+
+const control =
+  "w-full rounded-xl border border-line bg-black/40 px-4 text-ink outline-none transition focus:border-flare/70 focus:bg-black/50 focus:ring-2 focus:ring-flare/30";
+
+/** Native select (keyboard and screen-reader behaviour for free), styled like Input. */
+export const Select = forwardRef<
+  HTMLSelectElement,
+  SelectHTMLAttributes<HTMLSelectElement> & { invalid?: boolean }
+>(function Select({ className, invalid, children, ...rest }, ref) {
+  return (
+    <select
+      ref={ref}
+      aria-invalid={invalid || undefined}
+      className={cn(
+        control,
+        "h-11 appearance-none bg-[length:16px] pr-10 [&>option]:bg-[#121218]",
+        invalid && "border-bad/70",
+        className,
+      )}
+      style={{
+        backgroundImage:
+          "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "right 0.85rem center",
+      }}
+      {...rest}
+    >
+      {children}
+    </select>
+  );
+});
+
+export const Textarea = forwardRef<
+  HTMLTextAreaElement,
+  TextareaHTMLAttributes<HTMLTextAreaElement> & { invalid?: boolean }
+>(function Textarea({ className, invalid, ...rest }, ref) {
+  return (
+    <textarea
+      ref={ref}
+      aria-invalid={invalid || undefined}
+      className={cn(control, "min-h-28 py-3 placeholder:text-mist/70", invalid && "border-bad/70", className)}
       {...rest}
     />
   );

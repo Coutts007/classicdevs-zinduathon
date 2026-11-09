@@ -423,22 +423,24 @@ function PasswordTab() {
 const TABS = [
   { value: "profile", label: "Profile", Component: ProfileTab },
   { value: "contact", label: "Contact", Component: ContactTab },
-  { value: "github", label: "GitHub", Component: GithubTab },
+  { value: "github", label: "GitHub", Component: GithubTab, seekerOnly: true },
   { value: "notifications", label: "Notifications", Component: PreferencesMatrix },
   { value: "privacy", label: "Privacy", Component: PrivacyTab },
   { value: "password", label: "Password", Component: PasswordTab },
 ];
 
 export function SettingsPage() {
+  const { user } = useAuth();
   const [params, setParams] = useSearchParams();
-  const tab = TABS.some((t) => t.value === params.get("tab")) ? (params.get("tab") as string) : "profile";
+  const tabs = TABS.filter((t) => !("seekerOnly" in t) || user?.role === "job_seeker");
+  const tab = tabs.some((t) => t.value === params.get("tab")) ? (params.get("tab") as string) : "profile";
   return (
     <Tabs.Root value={tab} onValueChange={(v) => setParams({ tab: v })} className="space-y-4">
       <Tabs.List
         aria-label="Settings"
         className="glass-pill inline-flex max-w-full flex-wrap gap-1 rounded-2xl p-1"
       >
-        {TABS.map((t) => (
+        {tabs.map((t) => (
           <Tabs.Trigger
             key={t.value}
             value={t.value}
@@ -448,7 +450,7 @@ export function SettingsPage() {
           </Tabs.Trigger>
         ))}
       </Tabs.List>
-      {TABS.map(({ value, Component }) => (
+      {tabs.map(({ value, Component }) => (
         <Tabs.Content key={value} value={value}>
           <GlassPanel className="p-6">
             <Component />

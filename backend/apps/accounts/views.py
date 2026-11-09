@@ -177,6 +177,11 @@ class LoginView(APIView):
 class RefreshView(APIView):
     permission_classes = (AllowAny,)
     authentication_classes = ()
+    # Refresh is unauthenticated, so the shared "anon" budget (60/hour per IP) would sign out
+    # everyone behind one office or mobile-carrier NAT. Rotated tokens can't be brute-forced, so
+    # this gets its own, larger per-IP budget.
+    throttle_classes = (ScopedRateThrottle,)
+    throttle_scope = "token_refresh"
 
     @extend_schema(
         tags=["Auth"],
@@ -189,7 +194,7 @@ class RefreshView(APIView):
         request=RefreshSerializer,
         responses={
             200: TokenPairSerializer,
-            **errors((400, "validation_error"), (401, "token_invalid")),
+            **errors((400, "validation_error"), (401, "token_invalid"), (429, "rate_limited")),
         },
     )
     def post(self, request):

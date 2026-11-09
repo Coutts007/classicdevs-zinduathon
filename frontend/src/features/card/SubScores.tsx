@@ -14,7 +14,7 @@ export function SubScoreRadar({ subScores }: { subScores: Card["subScores"] }) {
       aria-label={`Sub-scores: ${data.map((d) => `${d.key} ${d.value} of 20`).join(", ")}`}
     >
       <ResponsiveContainer>
-        <RadarChart data={data} outerRadius="72%">
+        <RadarChart data={data} outerRadius="64%" margin={{ top: 8, right: 28, bottom: 8, left: 28 }}>
           <PolarGrid stroke="rgba(255,255,255,0.12)" />
           <PolarAngleAxis dataKey="key" tick={{ fill: "rgb(160,160,172)", fontSize: 12 }} />
           <PolarRadiusAxis domain={[0, 20]} tick={false} axisLine={false} />

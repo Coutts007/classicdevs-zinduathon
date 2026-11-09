@@ -108,3 +108,60 @@ the real API: wrong password → 400, right password → 204.
   doesn't support shows a dash; SMS switches are disabled until `smsReady`.
 - Password change returns a fresh token pair, stored at once, so this device stays signed in while
   others are signed out.
+
+## F-018 Typed nested recruiting objects (Phase 5, backend change)
+
+`Shortlist.candidate`, `Feedback.candidate` and `Job.requiredSkills` were method fields, so the
+schema said `{[key]: unknown}` and the frontend would have needed hand-written types. The backend
+now annotates them (`ShortlistCandidate`, `CandidateRef`, `RequiredSkill`); a schema test guards it.
+
+## F-019 Recruiter screens built from what the API has (Phase 5)
+
+- **Delivery status per channel** isn't exposed to recruiters (deliveries are admin-only), and the
+  feedback create response doesn't say which channels were used. The composer's toast says "in
+  their inbox, and by email and SMS if they've turned those on", and the sent list shows
+  moderation (held/blocked) and read state, which the API does return.
+- **"Recent candidates viewed"** has no recruiter endpoint (profile views are only exposed to the
+  job seeker as counts). The dashboard shows recent shortlist activity instead.
+- **Top match counts** on the dashboard: one `GET /jobs/{id}/matches?minMatch=75&pageSize=1` per
+  open job (max 5), reading `count`.
+- **Shortlist board** loads every page of `GET /shortlists` (it shows all stages at once). Moves are
+  optimistic with rollback. Keyboard: dnd-kit's keyboard sensor with a custom coordinate getter
+  that jumps column to column, plus a "Move to" menu on each card. Moving to Interview offers to
+  send feedback through `PATCH /shortlists/{id}` `feedbackMessage`.
+- Feedback preview shows the real templates (`recruiter_feedback/body.txt`, `sms.txt`): the SMS
+  never carries the message itself.
+
+## F-020 A rate-limited refresh never signs anyone out (Phase 5, backend change)
+
+`POST /auth/token/refresh` is unauthenticated, so it shared the 60/hour **anon** budget per IP.
+Every page load refreshes, so a busy office or a mobile carrier's NAT (common in Kenya) would
+have signed everyone out with a 429. Backend: the view has its own scope, `token_refresh`
+(600/hour per IP; rotated tokens can't be brute-forced). Frontend: `refreshSession()` returns
+`ok | invalid | unavailable`; only `invalid` (400/401) clears tokens. On `unavailable` (429, 5xx,
+offline) the middleware returns the original 401 without ending the session, and the bootstrap
+retries up to three times, honouring `Retry-After` (capped at 10 s).
+
+## F-021 Role-neutral links (Phase 5)
+
+Notifications, emails and SMS link to `/inbox`, `/dashboard`, `/recruiter` and `/u/:login`. The
+frontend serves `/inbox` and `/dashboard` as redirects: sign in if needed, then go to the user's
+area (`resolveLink`). The bell and the notifications page use the same mapping.
+
+## F-022 Guarded pages load after the guard (Phase 5)
+
+React Router resolves a route's `lazy` for every matched route before rendering any of them, so a
+signed-out visit to `/app` downloaded and ran the dashboard bundle (recharts included) before
+`RequireAuth` could redirect to `/login`. Guarded routes now use `lazyPage()` (React.lazy inside
+the element, with a skeleton fallback): the guard and shell render at once, and a signed-out
+visitor never fetches page code. Public and auth routes keep route-level `lazy`.
+
+## F-023 E2E runs on one worker; dev stack fixes (Phase 5)
+
+- Playwright `workers: 1`. Every spec uses the same seeded accounts and changes their state
+  (inbox read state, preferences, analyses), so parallel files raced each other, and four
+  Chromiums on a laptop starved the dev server into timeouts.
+- Mailpit runs with `--smtp-disable-rdns`. It reverse-resolved the Docker gateway before its
+  SMTP greeting, which stalled every email, and so every sign-up, by ~10 s.
+- Dev settings default `CONN_MAX_AGE` to 0. `runserver` uses a thread per request, and persistent
+  connections outlived their threads until Postgres refused new clients after a long e2e session.

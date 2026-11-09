@@ -6,7 +6,10 @@ import {
   LayoutDashboard,
   LineChart,
   Settings,
+  KanbanSquare,
+  Send,
   Sparkles,
+  Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useMatches, useNavigate } from "react-router-dom";
@@ -23,7 +26,7 @@ import { cn } from "@/lib/utils";
 
 type Role = "job_seeker" | "recruiter" | "admin";
 
-const NAV: Record<Role, { to: string; label: string; icon: typeof LayoutDashboard }[]> = {
+const NAV: Record<Role, { to: string; label: string; short?: string; icon: typeof LayoutDashboard }[]> = {
   job_seeker: [
     { to: "/app", label: "Dashboard", icon: LayoutDashboard },
     { to: "/app/analyse", label: "Analyse", icon: Sparkles },
@@ -36,6 +39,10 @@ const NAV: Record<Role, { to: string; label: string; icon: typeof LayoutDashboar
   ],
   recruiter: [
     { to: "/recruiter", label: "Dashboard", icon: LayoutDashboard },
+    { to: "/recruiter/candidates", label: "Candidates", icon: Users },
+    { to: "/recruiter/jobs", label: "Jobs", icon: Briefcase },
+    { to: "/recruiter/shortlists", label: "Shortlists", icon: KanbanSquare },
+    { to: "/recruiter/feedback", label: "Feedback sent", short: "Feedback", icon: Send },
     { to: "/recruiter/notifications", label: "Notifications", icon: Bell },
     { to: "/recruiter/settings", label: "Settings", icon: Settings },
   ],
@@ -97,7 +104,7 @@ export function AppShell({ area }: { area: Role }) {
           ))}
         </nav>
       </aside>
-      <div className="lg:pl-[17rem]">
+      <div className="overflow-x-clip lg:pl-[17rem]">
         <header className="glass-panel sticky top-4 z-30 mx-4 mt-4 flex h-14 items-center justify-between rounded-glass px-5">
           <h1 className="text-base font-semibold">{title}</h1>
           <div className="flex items-center gap-2">
@@ -114,20 +121,20 @@ export function AppShell({ area }: { area: Role }) {
         aria-label="App"
         className="glass-panel fixed inset-x-3 bottom-3 z-40 flex justify-around rounded-glass p-2 lg:hidden"
       >
-        {items.slice(0, 5).map(({ to, label, icon: Icon }) => (
+        {items.slice(0, 5).map(({ to, label, short, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
             end
             className={({ isActive }) =>
               cn(
-                "flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-[11px] text-mist",
+                "flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-[11px] text-mist",
                 isActive && "text-flare-hot",
               )
             }
           >
             <Icon aria-hidden className="h-5 w-5" />
-            {label}
+            <span className="max-w-full truncate">{short ?? label}</span>
           </NavLink>
         ))}
       </nav>

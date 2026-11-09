@@ -10,6 +10,9 @@ export default defineConfig({
   // The Vite dev server compiles routes on first visit; give assertions room.
   expect: { timeout: 10_000 },
   fullyParallel: false,
+  // One worker: every spec signs in as the same seeded accounts and changes their state (Amina's
+  // inbox, preferences and analyses), so files running side by side would race each other.
+  workers: 1,
   reporter: [["list"]],
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:5173",

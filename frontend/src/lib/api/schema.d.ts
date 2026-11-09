@@ -1246,6 +1246,10 @@ export interface components {
             topSkills: components["schemas"]["TopSkill"][];
             match: components["schemas"]["Match"];
         };
+        CandidateRef: {
+            githubLogin: string;
+            name: string;
+        };
         Card: {
             username: string;
             profile: components["schemas"]["CardProfile"];
@@ -1438,10 +1442,7 @@ export interface components {
             message: string;
             company: string;
             readonly recruiterName: string;
-            /** @description Only for the sender's view: who the feedback was about. */
-            readonly candidate: {
-                [key: string]: unknown;
-            } | null;
+            readonly candidate: components["schemas"]["CandidateRef"] | null;
             jobPosting: components["schemas"]["JobRef"] | null;
             moderation?: components["schemas"]["ModerationEnum"];
             /** Format: date-time */
@@ -1533,9 +1534,7 @@ export interface components {
             status?: components["schemas"]["JobStatusEnum"];
             /** Format: date-time */
             closesAt?: string | null;
-            readonly requiredSkills: {
-                [key: string]: unknown;
-            }[];
+            readonly requiredSkills: components["schemas"]["RequiredSkill"][];
             /** Format: date-time */
             readonly createdAt: string;
             /** Format: date-time */
@@ -1966,6 +1965,14 @@ export interface components {
          * @enum {string}
          */
         RemotePolicyEnum: "onsite" | "hybrid" | "remote";
+        RequiredSkill: {
+            /** @description Name, slug or alias */
+            skill: string;
+            /** @default moderate */
+            minimumLabel?: components["schemas"]["MinimumLabelEnum"];
+            /** @default 1 */
+            weight?: number;
+        };
         RequiredSkillRequest: {
             /** @description Name, slug or alias */
             skill: string;
@@ -1988,9 +1995,7 @@ export interface components {
         Shortlist: {
             /** Format: uuid */
             readonly id: string;
-            readonly candidate: {
-                [key: string]: unknown;
-            };
+            readonly candidate: components["schemas"]["ShortlistCandidate"];
             jobPosting: components["schemas"]["JobRef"] | null;
             stage?: components["schemas"]["ShortlistStageEnum"];
             /** @description Private to the recruiter */
@@ -1999,6 +2004,11 @@ export interface components {
             readonly createdAt: string;
             /** Format: date-time */
             readonly updatedAt: string;
+        };
+        ShortlistCandidate: {
+            githubLogin: string;
+            name: string;
+            headline: string;
         };
         ShortlistCreateRequest: {
             githubLogin: string;
@@ -3631,6 +3641,15 @@ export interface operations {
             };
             /** @description Not signed in or token invalid: `token_invalid` */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many requests: `rate_limited` */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

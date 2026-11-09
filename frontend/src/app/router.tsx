@@ -1,8 +1,9 @@
 import { createBrowserRouter, type RouteObject } from "react-router-dom";
 
-import { GuestOnly, RequireAuth } from "@/lib/auth/guards";
+import { GuestOnly, RequireAuth, RoleLink } from "@/lib/auth/guards";
 import { env } from "@/lib/env";
 
+import { lazyPage } from "./lazy-page";
 import { AppShell } from "./layouts/AppShell";
 import { AuthLayout } from "./layouts/AuthLayout";
 import { PublicLayout } from "./layouts/PublicLayout";
@@ -10,7 +11,10 @@ import { NotFound, RouteError } from "./pages/SystemPages";
 
 const auth = () => import("@/features/auth");
 
-/** Each section is its own chunk (React Router `lazy`), so the landing page stays small. */
+/**
+ * Each section is its own chunk, so the landing page stays small. Public routes use React Router
+ * `lazy`; guarded routes use `lazyPage` so the guard can redirect before any page code loads.
+ */
 const routes: RouteObject[] = [
   {
     element: <PublicLayout />,
@@ -52,7 +56,15 @@ const routes: RouteObject[] = [
       {
         path: "recruiter/pending",
         element: <RequireAuth roles={["recruiter"]} allowUnapproved />,
-        children: [{ index: true, lazy: async () => ({ Component: (await auth()).RecruiterPendingPage }) }],
+        children: [
+          {
+            index: true,
+            ...lazyPage(
+              () => auth(),
+              (m) => m.RecruiterPendingPage,
+            ),
+          },
+        ],
       },
     ],
   },
@@ -68,39 +80,66 @@ const routes: RouteObject[] = [
       {
         index: true,
         handle: { title: "Dashboard" },
-        lazy: async () => ({ Component: (await import("@/features/seeker/DashboardPage")).DashboardPage }),
+        ...lazyPage(
+          () => import("@/features/seeker/DashboardPage"),
+          (m) => m.DashboardPage,
+        ),
       },
       {
         path: "analyse",
         handle: { title: "Analyse" },
-        lazy: async () => ({ Component: (await import("@/features/analysis/AnalysePage")).AnalysePage }),
+        ...lazyPage(
+          () => import("@/features/analysis/AnalysePage"),
+          (m) => m.AnalysePage,
+        ),
       },
       {
         path: "card",
         handle: { title: "My card" },
-        lazy: async () => ({ Component: (await import("@/features/seeker/MyCardPage")).MyCardPage }),
+        ...lazyPage(
+          () => import("@/features/seeker/MyCardPage"),
+          (m) => m.MyCardPage,
+        ),
       },
       {
         path: "history",
         handle: { title: "History" },
-        lazy: async () => ({ Component: (await import("@/features/seeker/HistoryPage")).HistoryPage }),
+        ...lazyPage(
+          () => import("@/features/seeker/HistoryPage"),
+          (m) => m.HistoryPage,
+        ),
+      },
+      {
+        path: "jobs",
+        handle: { title: "Jobs" },
+        ...lazyPage(
+          () => import("@/features/seeker/JobsPage"),
+          (m) => m.SeekerJobsPage,
+        ),
       },
       {
         path: "inbox",
         handle: { title: "Inbox" },
-        lazy: async () => ({ Component: (await import("@/features/seeker/InboxPage")).InboxPage }),
+        ...lazyPage(
+          () => import("@/features/seeker/InboxPage"),
+          (m) => m.InboxPage,
+        ),
       },
       {
         path: "notifications",
         handle: { title: "Notifications" },
-        lazy: async () => ({
-          Component: (await import("@/features/notifications/NotificationsPage")).NotificationsPage,
-        }),
+        ...lazyPage(
+          () => import("@/features/notifications/NotificationsPage"),
+          (m) => m.NotificationsPage,
+        ),
       },
       {
         path: "settings",
         handle: { title: "Settings" },
-        lazy: async () => ({ Component: (await import("@/features/settings/SettingsPage")).SettingsPage }),
+        ...lazyPage(
+          () => import("@/features/settings/SettingsPage"),
+          (m) => m.SettingsPage,
+        ),
       },
     ],
   },
@@ -115,19 +154,91 @@ const routes: RouteObject[] = [
     children: [
       {
         index: true,
-        lazy: async () => ({ Component: (await import("./pages/Placeholder")).AppPlaceholder }),
+        handle: { title: "Dashboard" },
+        ...lazyPage(
+          () => import("@/features/recruiter/DashboardPage"),
+          (m) => m.RecruiterDashboardPage,
+        ),
+      },
+      {
+        path: "candidates",
+        handle: { title: "Candidates" },
+        ...lazyPage(
+          () => import("@/features/recruiter/CandidatesPage"),
+          (m) => m.CandidatesPage,
+        ),
+      },
+      {
+        path: "candidates/:login",
+        handle: { title: "Candidate" },
+        ...lazyPage(
+          () => import("@/features/recruiter/CandidatePage"),
+          (m) => m.CandidatePage,
+        ),
+      },
+      {
+        path: "jobs",
+        handle: { title: "Jobs" },
+        ...lazyPage(
+          () => import("@/features/recruiter/JobsPage"),
+          (m) => m.JobsPage,
+        ),
+      },
+      {
+        path: "jobs/new",
+        handle: { title: "New job" },
+        ...lazyPage(
+          () => import("@/features/recruiter/JobFormPage"),
+          (m) => m.JobFormPage,
+        ),
+      },
+      {
+        path: "jobs/:id",
+        handle: { title: "Job" },
+        ...lazyPage(
+          () => import("@/features/recruiter/JobPage"),
+          (m) => m.JobPage,
+        ),
+      },
+      {
+        path: "jobs/:id/edit",
+        handle: { title: "Edit job" },
+        ...lazyPage(
+          () => import("@/features/recruiter/JobFormPage"),
+          (m) => m.JobFormPage,
+        ),
+      },
+      {
+        path: "shortlists",
+        handle: { title: "Shortlists" },
+        ...lazyPage(
+          () => import("@/features/recruiter/ShortlistBoard"),
+          (m) => m.ShortlistBoard,
+        ),
+      },
+      {
+        path: "feedback",
+        handle: { title: "Feedback sent" },
+        ...lazyPage(
+          () => import("@/features/recruiter/FeedbackSentPage"),
+          (m) => m.FeedbackSentPage,
+        ),
       },
       {
         path: "notifications",
         handle: { title: "Notifications" },
-        lazy: async () => ({
-          Component: (await import("@/features/notifications/NotificationsPage")).NotificationsPage,
-        }),
+        ...lazyPage(
+          () => import("@/features/notifications/NotificationsPage"),
+          (m) => m.NotificationsPage,
+        ),
       },
       {
         path: "settings",
         handle: { title: "Settings" },
-        lazy: async () => ({ Component: (await import("@/features/settings/SettingsPage")).SettingsPage }),
+        ...lazyPage(
+          () => import("@/features/settings/SettingsPage"),
+          (m) => m.SettingsPage,
+        ),
       },
     ],
   },
@@ -142,17 +253,24 @@ const routes: RouteObject[] = [
     children: [
       {
         index: true,
-        lazy: async () => ({ Component: (await import("./pages/Placeholder")).AppPlaceholder }),
+        ...lazyPage(
+          () => import("./pages/Placeholder"),
+          (m) => m.AppPlaceholder,
+        ),
       },
       {
         path: "notifications",
         handle: { title: "Notifications" },
-        lazy: async () => ({
-          Component: (await import("@/features/notifications/NotificationsPage")).NotificationsPage,
-        }),
+        ...lazyPage(
+          () => import("@/features/notifications/NotificationsPage"),
+          (m) => m.NotificationsPage,
+        ),
       },
     ],
   },
+  // Role-neutral links used in emails, SMS and notifications.
+  { path: "inbox", element: <RoleLink path="/inbox" /> },
+  { path: "dashboard", element: <RoleLink path="/dashboard" /> },
   ...(env.includeDevRoutes
     ? [
         { path: "dev/ui", lazy: async () => ({ Component: (await import("@/dev/DevUiPage")).DevUiPage }) },

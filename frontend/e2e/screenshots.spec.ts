@@ -88,6 +88,58 @@ const AUTHED: { name: string; path: string; account: string; ready?: (page: Page
     ready: (p) => p.getByRole("radiogroup", { name: "Show" }).waitFor(),
   },
   {
+    name: "app-jobs",
+    path: "/app/jobs",
+    account: "amina@jobseeker.demo",
+    ready: (p) => p.getByRole("button", { name: "How well do I match?" }).first().waitFor(),
+  },
+  {
+    name: "recruiter-dashboard",
+    path: "/recruiter",
+    account: "grace@savanna.demo",
+    ready: (p) => p.getByText("75%+ matches").first().waitFor(),
+  },
+  {
+    name: "recruiter-candidates",
+    path: "/recruiter/candidates?skills=Django",
+    account: "grace@savanna.demo",
+    ready: (p) => p.getByText(/\d+ candidates?/).waitFor(),
+  },
+  {
+    name: "recruiter-candidate",
+    path: "/recruiter/candidates/amina-demo",
+    account: "grace@savanna.demo",
+    ready: (p) => p.getByRole("heading", { name: "Proven skills" }).waitFor({ timeout: 30_000 }),
+  },
+  {
+    name: "recruiter-jobs",
+    path: "/recruiter/jobs",
+    account: "grace@savanna.demo",
+    ready: (p) => p.getByRole("link", { name: "New job" }).waitFor(),
+  },
+  {
+    name: "recruiter-job-new",
+    path: "/recruiter/jobs/new",
+    account: "grace@savanna.demo",
+    ready: (p) => p.getByRole("button", { name: "Save as draft" }).waitFor(),
+  },
+  {
+    name: "recruiter-shortlists",
+    path: "/recruiter/shortlists",
+    account: "grace@savanna.demo",
+    ready: (p) => p.getByRole("region", { name: /^Saved, / }).waitFor(),
+  },
+  {
+    name: "recruiter-feedback",
+    path: "/recruiter/feedback",
+    account: "grace@savanna.demo",
+    ready: (p) =>
+      p
+        .getByText(/Read|Delivered/)
+        .first()
+        .waitFor(),
+  },
+  {
     name: "app-settings-notifications",
     path: "/app/settings?tab=notifications",
     account: "amina@jobseeker.demo",
@@ -104,7 +156,7 @@ for (const size of WIDTHS) {
         await page.getByLabel("Email").fill(shot.account);
         await page.getByLabel("Password").fill(process.env.DEMO_PASSWORD ?? "SkillProof-demo-2026");
         await page.getByRole("button", { name: "Sign in" }).click();
-        await page.waitForURL(/\/app$/);
+        await page.waitForURL((u) => !u.pathname.startsWith("/login"));
       }
       await page.goto(shot.path);
       await shot.ready?.(page);

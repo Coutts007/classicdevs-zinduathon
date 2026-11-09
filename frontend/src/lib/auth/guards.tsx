@@ -5,7 +5,7 @@ import { Splash } from "@/components/Splash";
 import type { Role } from "@/lib/api/types";
 
 import { useAuth } from "./auth-context";
-import { homeFor } from "./redirects";
+import { homeFor, resolveLink } from "./redirects";
 
 /**
  * Route guard: signed in, with one of `roles`; recruiters additionally approved unless
@@ -41,4 +41,14 @@ export function GuestOnly({ children }: { children?: ReactNode }) {
   if (status === "loading") return <Splash />;
   if (status === "signed-in" && user) return <Navigate to={homeFor(user)} replace />;
   return children ? <>{children}</> : <Outlet />;
+}
+
+/** `/inbox`, `/dashboard` from email and SMS links: sign in if needed, then go to the right area. */
+export function RoleLink({ path }: { path: string }) {
+  const { user } = useAuth();
+  return (
+    <RequireAuth roles={["job_seeker", "recruiter", "admin"]} allowUnapproved>
+      {user && <Navigate to={resolveLink(path, user)} replace />}
+    </RequireAuth>
+  );
 }

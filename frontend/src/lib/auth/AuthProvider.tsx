@@ -7,7 +7,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
-import { api, refreshSession, unwrap } from "@/lib/api/client";
+import { api, lastRetryAfterMs, refreshSession, unwrap, type RefreshResult } from "@/lib/api/client";
+import { ApiError } from "@/lib/api/errors";
 import { qk } from "@/lib/api/query-keys";
 import type { Me } from "@/lib/api/types";
 
@@ -40,18 +41,24 @@ export function AuthProvider({
     if (!tokens.refresh()) return;
     let alive = true;
     (async () => {
-      const ok = tokens.access() ? true : await refreshSession();
+      // A rate limit or outage must not sign anyone out: back off and try again a few times.
+      let result: RefreshResult = tokens.access() ? "ok" : await refreshSession();
+      for (let attempt = 0; result === "unavailable" && attempt < 3 && alive; attempt++) {
+        await new Promise((r) => setTimeout(r, lastRetryAfterMs() * (attempt + 1)));
+        if (alive) result = await refreshSession();
+      }
       if (!alive) return;
-      if (!ok) {
-        tokens.clear();
+      if (result !== "ok") {
+        if (result === "invalid") tokens.clear();
+        else toast("Can't reach SkillProof right now. Sign in again in a moment.");
         setStatus("signed-out");
         return;
       }
       try {
         await loadMe();
-      } catch {
+      } catch (e) {
         if (alive) {
-          tokens.clear();
+          if (e instanceof ApiError && e.status === 401) tokens.clear();
           setStatus("signed-out");
         }
       }

@@ -234,6 +234,19 @@ JWT_REFRESH_IN_COOKIE = env_bool("JWT_REFRESH_IN_COOKIE", False)
 CORS_ALLOW_CREDENTIALS = JWT_REFRESH_IN_COOKIE
 
 # --- Django REST Framework ------------------------------------------------------------------------
+# End-to-end test servers sign in dozens of times a minute from one IP. THROTTLE_SCALE multiplies
+# every rate there (e.g. 50). Leave it at 1 everywhere else.
+THROTTLE_SCALE = max(1, env_int("THROTTLE_SCALE", 1))
+
+
+def _scaled(rates: dict[str, str]) -> dict[str, str]:
+    def scale(rate: str) -> str:
+        count, period = rate.split("/")
+        return f"{int(count) * THROTTLE_SCALE}/{period}"
+
+    return {scope: scale(rate) for scope, rate in rates.items()}
+
+
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": (
         "djangorestframework_camel_case.render.CamelCaseJSONRenderer",
@@ -263,15 +276,18 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
     ),
-    "DEFAULT_THROTTLE_RATES": {
-        "anon": "60/hour",
-        "user": "600/hour",
-        "login": "5/minute",
-        "analysis": "10/hour",
-        "feedback": "30/hour",
-        "phone_code": "3/hour",
-        "password_reset": "5/hour",
-    },
+    "DEFAULT_THROTTLE_RATES": _scaled(
+        {
+            "anon": "60/hour",
+            "user": "600/hour",
+            "login": "5/minute",
+            "token_refresh": "600/hour",
+            "analysis": "10/hour",
+            "feedback": "30/hour",
+            "phone_code": "3/hour",
+            "password_reset": "5/hour",
+        }
+    ),
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
 }
 

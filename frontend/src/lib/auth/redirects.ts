@@ -14,3 +14,13 @@ export function safeNext(next: string | null | undefined): string | null {
   if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/login")) return null;
   return next;
 }
+
+/**
+ * Notification links from the API are role-neutral (`/inbox`, `/dashboard`, `/recruiter`, `/u/…`)
+ * and also appear in emails and SMS. Map them to the signed-in user's area.
+ */
+export function resolveLink(path: string, user: Me): string {
+  if (path === "/dashboard") return homeFor(user);
+  if (path === "/inbox") return user.role === "job_seeker" ? "/app/inbox" : homeFor(user);
+  return path;
+}

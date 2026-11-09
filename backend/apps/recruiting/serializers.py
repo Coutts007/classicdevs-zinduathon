@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.analysis.serializers import CardSerializer
@@ -68,6 +69,15 @@ class FeedbackCreateSerializer(serializers.Serializer):
     job_posting_id = serializers.UUIDField(required=False, allow_null=True)
 
 
+class CandidateRefSerializer(serializers.Serializer):
+    github_login = serializers.CharField(allow_blank=True)
+    name = serializers.CharField(allow_blank=True)
+
+
+class ShortlistCandidateSerializer(CandidateRefSerializer):
+    headline = serializers.CharField(allow_blank=True)
+
+
 class JobRefSerializer(serializers.Serializer):
     id = serializers.UUIDField(source="public_id")
     title = serializers.CharField()
@@ -98,6 +108,7 @@ class FeedbackSerializer(serializers.ModelSerializer):
     def get_recruiter_name(self, obj) -> str:
         return (obj.recruiter.full_name if obj.recruiter else "") or "A recruiter"
 
+    @extend_schema_field(CandidateRefSerializer(allow_null=True))
     def get_candidate(self, obj) -> dict | None:
         """Only for the sender's view: who the feedback was about."""
         if not self.context.get("show_candidate"):
@@ -137,6 +148,7 @@ class JobSerializer(serializers.ModelSerializer):
             "updated_at",
         )
 
+    @extend_schema_field(RequiredSkillSerializer(many=True))
     def get_required_skills(self, obj) -> list[dict]:
         return [
             {"skill": r.skill.name, "minimum_label": r.minimum_label, "weight": r.weight}
@@ -169,6 +181,7 @@ class ShortlistSerializer(serializers.ModelSerializer):
         model = ShortlistEntry
         fields = ("id", "candidate", "job_posting", "stage", "note", "created_at", "updated_at")
 
+    @extend_schema_field(ShortlistCandidateSerializer)
     def get_candidate(self, obj) -> dict:
         user = obj.job_seeker.user
         account = getattr(user, "github_account", None)

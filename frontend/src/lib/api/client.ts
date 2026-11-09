@@ -5,7 +5,8 @@
  *  1. Authorization: Bearer <access> and X-Request-ID on every request.
  *  2. On 401 (token_invalid / not_authenticated) with a refresh token: ONE shared refresh call
  *     for all concurrent requests, then each original request is retried once. If the refresh
- *     fails, tokens are cleared and sessionEvents.ended() fires.
+ *     token is rejected, tokens are cleared and sessionEvents.ended() fires; if the refresh is
+ *     only unavailable (429, 5xx, offline), the session is kept.
  */
 import createClient, { type Middleware } from "openapi-fetch";
 
@@ -22,24 +23,38 @@ const ORIGIN = API_BASE_URL.replace(/\/api\/v1$/, "");
 const NO_REFRESH = ["/auth/login", "/auth/register", "/auth/token/refresh", "/auth/github/callback"];
 const pending = new Map<string, Request>(); // request id → untouched clone, for one retry
 
-let refreshing: Promise<boolean> | null = null;
+/**
+ * "invalid": the refresh token is dead (sign in again). "unavailable": rate-limited, server error
+ * or offline: keep the session and try later, never sign the user out for it.
+ */
+export type RefreshResult = "ok" | "invalid" | "unavailable";
+let refreshing: Promise<RefreshResult> | null = null;
+let retryAfterMs = 0;
+
+/** Seconds from the last 429's Retry-After (capped at 10 s), for callers that back off. */
+export const lastRetryAfterMs = () => retryAfterMs;
 
 /** Exchange the refresh token. Single-flight: concurrent callers share one network call. */
-export function refreshSession(fetchImpl: typeof fetch = fetch): Promise<boolean> {
+export function refreshSession(fetchImpl: typeof fetch = fetch): Promise<RefreshResult> {
   const refresh = tokens.refresh();
-  if (!refresh) return Promise.resolve(false);
-  refreshing ??= (async () => {
+  if (!refresh) return Promise.resolve("invalid");
+  refreshing ??= (async (): Promise<RefreshResult> => {
     try {
       const response = await fetchImpl(`${API_BASE_URL}/auth/token/refresh`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refresh }),
       });
-      if (!response.ok) return false;
-      tokens.set((await response.json()) as TokenPair);
-      return true;
+      if (response.ok) {
+        tokens.set((await response.json()) as TokenPair);
+        return "ok";
+      }
+      if (response.status === 400 || response.status === 401) return "invalid";
+      retryAfterMs = Math.min(10, Number(response.headers.get("Retry-After")) || 2) * 1000;
+      return "unavailable";
     } catch {
-      return false;
+      retryAfterMs = 2000;
+      return "unavailable";
     } finally {
       queueMicrotask(() => {
         refreshing = null;
@@ -79,11 +94,13 @@ export function authMiddleware(fetchImpl: typeof fetch = fetch): Middleware {
         .catch(() => ({}))) as { code?: string };
       if (body.code !== "token_invalid" && body.code !== "not_authenticated") return response;
 
-      if (!(await refreshSession(fetchImpl))) {
+      const result = await refreshSession(fetchImpl);
+      if (result === "invalid") {
         tokens.clear();
         sessionEvents.ended();
         return response;
       }
+      if (result === "unavailable") return response; // transient: keep the session
       const retry = new Request(original, { headers: new Headers(original.headers) });
       retry.headers.set("Authorization", `Bearer ${tokens.access()}`);
       return fetchImpl(retry); // retried once: a second 401 is returned as-is

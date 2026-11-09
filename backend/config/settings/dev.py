@@ -10,6 +10,10 @@ ALLOWED_HOSTS = [*ALLOWED_HOSTS, "0.0.0.0", "web"]  # noqa: S104 - docker-compos
 
 CELERY_TASK_ALWAYS_EAGER = env_bool("CELERY_TASK_ALWAYS_EAGER", True)
 
+# runserver serves each request on a new thread. With persistent connections each thread's
+# connection outlives it, so a long e2e session exhausts Postgres ("too many clients").
+DATABASES["default"]["CONN_MAX_AGE"] = env_int("DB_CONN_MAX_AGE", 0)
+
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = env_str("EMAIL_HOST", "localhost")
 EMAIL_PORT = env_int("EMAIL_PORT", 1025)

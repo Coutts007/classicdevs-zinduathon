@@ -13,15 +13,11 @@ import { userMessage } from "@/lib/api/errors";
 import { qk } from "@/lib/api/query-keys";
 import type { Feedback } from "@/lib/api/types";
 import { ago, fmtDate } from "@/lib/format";
+import { FEEDBACK_STATUS } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 
 type Status = "all" | "shortlisted" | "interview" | "not_a_fit" | "general";
-const STATUS: Record<Exclude<Status, "all">, { label: string; tone: "ok" | "flare" | "bad" | "neutral" }> = {
-  shortlisted: { label: "Shortlisted", tone: "ok" },
-  interview: { label: "Interview", tone: "flare" },
-  not_a_fit: { label: "Not a fit", tone: "bad" },
-  general: { label: "General", tone: "neutral" },
-};
+const STATUS = FEEDBACK_STATUS;
 type Page = { count: number; next: string | null; previous: string | null; results: Feedback[] };
 
 /** Recruiter feedback for job seekers: list + detail, marked read when opened. */
