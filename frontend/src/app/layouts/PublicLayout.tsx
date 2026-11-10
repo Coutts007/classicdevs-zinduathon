@@ -106,7 +106,7 @@ export function PublicLayout() {
       <footer className="relative border-t border-line px-6 py-10 text-sm text-mist">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4">
           <Wordmark className="text-ink" />
-          <p>Built for Zinduathon 3.0 · Nairobi</p>
+          <p>Built by Classic Devs. All rights reserved</p>
           <div className="flex items-center gap-4">
             <Link to="/terms" className="hover:text-ink">
               Terms
